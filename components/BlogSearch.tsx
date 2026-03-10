@@ -4,7 +4,7 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useDebouncedCallback } from "use-debounce";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import Img from "@/components/Img";
 import { ArticleMeta } from "@/types";
 import { EventData } from "@/lib/events";
 import ArticleCard from "@/components/ArticleCard";
@@ -97,12 +97,11 @@ export default function BlogSearch({ articles, events }: Props) {
                   <Link key={event.slug} href={`/blog/${event.slug}`} className="card overflow-hidden group">
                     <div className="relative h-48 bg-brand-blue-light overflow-hidden">
                       {event.images[0] ? (
-                        <Image
+                        <Img
                           src={event.images[0]}
                           alt={event.title}
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-300"
-                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">

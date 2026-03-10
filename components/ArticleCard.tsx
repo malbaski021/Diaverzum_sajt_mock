@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Image from "next/image";
+import Img from "@/components/Img";
 import { ArticleMeta } from "@/types";
 import { format } from "date-fns";
 import { sr } from "date-fns/locale";
@@ -18,12 +18,11 @@ export default function ArticleCard({ article, section }: Props) {
       <Link href={href} tabIndex={-1} aria-hidden="true">
         <div className="relative h-48 bg-brand-blue-light overflow-hidden">
           {article.image ? (
-            <Image
+            <Img
               src={article.image}
               alt=""
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-300"
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">

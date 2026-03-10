@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Image from "next/image";
+import Img from "@/components/Img";
 
 interface Props {
   images: string[];
@@ -56,12 +56,11 @@ export default function ImageGallery({ images, title }: Props) {
             aria-label={`Otvori fotografiju ${i + 1} od ${images.length}: ${title}`}
             role="listitem"
           >
-            <Image
+            <Img
               src={src}
               alt={`${title} — fotografija ${i + 1}`}
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-300"
-              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200 flex items-center justify-center">
               <svg
@@ -100,12 +99,11 @@ export default function ImageGallery({ images, title }: Props) {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="relative w-full h-[80vh]">
-              <Image
+              <Img
                 src={images[lightbox]}
                 alt={`${title} — fotografija ${lightbox + 1}`}
                 fill
                 className="object-contain"
-                sizes="100vw"
                 priority
               />
             </div>

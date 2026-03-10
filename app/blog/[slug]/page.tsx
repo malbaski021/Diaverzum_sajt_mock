@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
+import Img from "@/components/Img";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import { getArticleBySlug, getAllSlugs } from "@/lib/mdx";
 import { getEventBySlug, getAllEventSlugs } from "@/lib/events";
@@ -75,13 +75,12 @@ function EventPage({ slug }: { slug: string }) {
           {/* First image */}
           {heroImage && (
             <div className="relative rounded-xl overflow-hidden aspect-[4/3] md:aspect-auto md:min-h-[360px]">
-              <Image
+              <Img
                 src={heroImage}
                 alt={`${event.title} — fotografija`}
                 fill
                 className="object-cover"
                 priority
-                sizes="(max-width: 768px) 100vw, 50vw"
               />
             </div>
           )}
@@ -168,7 +167,7 @@ function MdxPage({ slug }: { slug: string }) {
           </div>
           {meta.image && (
             <div className="relative h-64 md:h-96 rounded-xl overflow-hidden mb-8">
-              <Image src={meta.image} alt={meta.title} fill className="object-cover" priority sizes="(max-width: 768px) 100vw, 768px" />
+              <Img src={meta.image} alt={meta.title} fill className="object-cover" priority />
             </div>
           )}
           <div className="prose max-w-none">

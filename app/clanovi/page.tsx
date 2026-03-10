@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Image from "next/image";
+import Img from "@/components/Img";
 
 export const metadata: Metadata = {
   title: "Članovi",
@@ -56,12 +56,11 @@ export default function ClanoviPage() {
           {members.map((member) => (
             <article key={member.name} className="card overflow-hidden">
               <div className="relative aspect-[3/4] w-full overflow-hidden bg-brand-blue-light">
-                <Image
+                <Img
                   src={member.image}
                   alt={`Fotografija: ${member.name}`}
                   fill
                   className="object-cover object-top"
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 />
               </div>
               <div className="p-6">

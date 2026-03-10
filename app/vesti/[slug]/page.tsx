@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
+import Img from "@/components/Img";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import { getArticleBySlug, getAllSlugs } from "@/lib/mdx";
 import { format } from "date-fns";
@@ -75,7 +75,7 @@ export default function VestiSlugPage({ params }: Props) {
         {meta.image ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
             <div className="relative rounded-xl overflow-hidden aspect-[4/3] md:aspect-auto md:min-h-[340px]">
-              <Image
+              <Img
                 src={meta.image}
                 alt={meta.title}
                 fill

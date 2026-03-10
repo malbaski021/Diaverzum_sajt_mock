@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import Img from "@/components/Img";
 import { ArticleMeta } from "@/types";
 import { format } from "date-fns";
 import { sr } from "date-fns/locale";
@@ -51,12 +51,11 @@ export default function NewsSlider({ articles }: Props) {
       {/* Image */}
       <div className="relative h-56 bg-brand-blue-light">
         {article.image ? (
-          <Image
+          <Img
             src={article.image}
             alt={article.title}
             fill
             className="object-cover"
-            sizes="(max-width: 768px) 100vw, 50vw"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
