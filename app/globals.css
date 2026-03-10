@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@layer base {
+  :root {
+    --color-brand-blue: #0056b3;
+    --color-brand-blue-dark: #003d80;
+    --color-brand-blue-light: #e8f0fb;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    font-size: 16px;
+  }
+
+  body {
+    @apply font-sans text-gray-800 bg-white antialiased;
+    line-height: 1.6;
+  }
+
+  /* Skip to content - accessibility */
+  .skip-to-content {
+    @apply absolute -top-full left-4 z-50 bg-brand-blue text-white px-4 py-2 rounded-lg font-semibold;
+    transition: top 0.2s;
+  }
+  .skip-to-content:focus {
+    @apply top-4;
+  }
+
+  /* Focus indicator - WCAG 2.1 AA */
+  :focus-visible {
+    outline: 3px solid #0056b3;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  h1 { @apply text-4xl font-bold leading-tight; }
+  h2 { @apply text-3xl font-bold leading-tight; }
+  h3 { @apply text-2xl font-semibold leading-snug; }
+  h4 { @apply text-xl font-semibold; }
+
+  /* Prose styles for MDX content */
+  .prose h2 { @apply text-2xl font-bold mt-8 mb-4 text-gray-900; }
+  .prose h3 { @apply text-xl font-semibold mt-6 mb-3 text-gray-900; }
+  .prose p { @apply text-gray-700 mb-4 leading-relaxed; }
+  .prose ul { @apply list-disc list-inside mb-4 space-y-1 text-gray-700; }
+  .prose ol { @apply list-decimal list-inside mb-4 space-y-1 text-gray-700; }
+  .prose a { @apply text-brand-blue underline hover:text-brand-blue-dark; }
+  .prose blockquote {
+    @apply border-l-4 border-brand-blue pl-4 italic text-gray-600 my-6;
+  }
+  .prose strong { @apply font-semibold text-gray-900; }
+  .prose code {
+    @apply bg-gray-100 text-brand-blue px-1 py-0.5 rounded text-sm font-mono;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center gap-2 bg-brand-blue text-white font-semibold px-6 py-3 rounded-lg
+      hover:bg-brand-blue-dark transition-colors duration-200 focus-visible:outline-none
+      focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center gap-2 border-2 border-brand-blue text-brand-blue font-semibold
+      px-6 py-3 rounded-lg hover:bg-brand-blue-light transition-colors duration-200;
+  }
+
+  .card {
+    @apply bg-white rounded-xl shadow-sm border border-brand-gray-mid hover:shadow-md
+      transition-shadow duration-200;
+  }
+
+  .section-padding {
+    @apply py-16 px-4;
+  }
+
+  .container-max {
+    @apply max-w-6xl mx-auto;
+  }
+}
