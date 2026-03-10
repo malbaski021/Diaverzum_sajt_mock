@@ -148,38 +148,3 @@ export default function Navbar() {
   );
 }
 
-function DiaverzumLogo() {
-  return (
-    <svg
-      width="40"
-      height="40"
-      viewBox="0 0 40 40"
-      fill="none"
-      aria-hidden="true"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <circle cx="20" cy="20" r="20" fill="#0056b3" />
-      {/* Simplified blue circle (diabetes symbol) */}
-      <circle
-        cx="20"
-        cy="20"
-        r="11"
-        stroke="white"
-        strokeWidth="3"
-        fill="none"
-      />
-      {/* Letter D */}
-      <text
-        x="20"
-        y="25"
-        textAnchor="middle"
-        fill="white"
-        fontSize="14"
-        fontWeight="700"
-        fontFamily="Inter, sans-serif"
-      >
-        D
-      </text>
-    </svg>
-  );
-}
