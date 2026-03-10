@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
+
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 const navLinks = [
   { label: "O nama", href: "/o-nama" },
@@ -47,14 +48,11 @@ export default function Navbar() {
           className="flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue rounded-lg"
           aria-label="Diaverzum Novi Sad — početna"
         >
-          <Image
-            src="/diaverzum-logo.png"
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={`${BASE}/diaverzum-logo.png`}
             alt="Diaverzum Novi Sad"
-            width={600}
-            height={180}
-            className="object-contain"
-            style={{ height: "90px", width: "auto" }}
-            priority
+            style={{ height: "90px", width: "auto", objectFit: "contain" }}
           />
         </Link>
 

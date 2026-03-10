@@ -1,4 +1,4 @@
-import Image from "next/image";
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -8,13 +8,11 @@ export default function Footer() {
       <div className="container-max px-4 py-16">
         <div className="flex flex-col items-start gap-6">
           <div style={{ height: "110px", overflow: "hidden" }}>
-            <Image
-              src="/diaverzum-logo-footer.png"
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`${BASE}/diaverzum-logo-footer.png`}
               alt="Diaverzum Novi Sad"
-              width={600}
-              height={200}
-              className="object-contain"
-              style={{ height: "160px", width: "auto", marginTop: "-25px" }}
+              style={{ height: "160px", width: "auto", objectFit: "contain", marginTop: "-25px" }}
             />
           </div>
           <p className="text-gray-400 text-sm leading-relaxed max-w-sm">

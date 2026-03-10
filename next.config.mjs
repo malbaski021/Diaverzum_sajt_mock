@@ -7,6 +7,9 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  env: {
+    NEXT_PUBLIC_BASE_PATH: "/Diaverzum_sajt_mock",
+  },
 };
 
 export default nextConfig;
