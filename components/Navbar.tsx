@@ -42,19 +42,33 @@ export default function Navbar() {
         className="container-max flex items-center justify-between h-16 px-4"
         aria-label="Glavna navigacija"
       >
-        {/* Logo */}
-        <Link
-          href="/"
-          className="flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue rounded-lg"
-          aria-label="Diaverzum Novi Sad — početna"
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={`${BASE}/diaverzum-logo.png`}
-            alt="Diaverzum Novi Sad"
-            style={{ height: "90px", width: "auto", objectFit: "contain" }}
-          />
-        </Link>
+        {/* Logos */}
+        <div className="flex items-center gap-4">
+          <Link
+            href="/"
+            className="flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue rounded-lg"
+            aria-label="Diaverzum Novi Sad — početna"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`${BASE}/diaverzum-logo.png`}
+              alt="Diaverzum Novi Sad"
+              style={{ height: "90px", width: "auto", objectFit: "contain" }}
+            />
+          </Link>
+          <Link
+            href="/juniori"
+            className="flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue rounded-lg"
+            aria-label="Diaverzum Juniori"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`${BASE}/diaverzum-logo-juniors.png`}
+              alt="Diaverzum Juniori"
+              style={{ height: "90px", width: "auto", objectFit: "contain" }}
+            />
+          </Link>
+        </div>
 
         {/* Desktop nav */}
         <ul className="hidden md:flex items-center gap-1" role="list">

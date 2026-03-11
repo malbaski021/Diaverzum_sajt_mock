@@ -38,55 +38,45 @@ export default function HomePage() {
     <>
       <HeroSection />
 
-      {/* Latest News + Quick Links */}
+      {/* Latest News */}
       <section className="section-padding bg-brand-gray" aria-labelledby="news-heading">
         <div className="container-max">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-            {/* News Slider */}
-            <div>
-              <div className="flex items-center justify-between mb-6">
-                <h2 id="news-heading" className="text-2xl font-bold text-gray-900">
-                  Najnovije vesti
-                </h2>
-                <Link
-                  href="/vesti"
-                  className="text-brand-blue font-medium text-sm hover:underline"
-                >
-                  Sve vesti →
-                </Link>
-              </div>
-              {latestNews.length > 0 ? (
-                <NewsSlider articles={latestNews} />
-              ) : (
-                <div className="card p-8 text-center text-gray-400">
-                  <p>Vesti uskoro...</p>
-                </div>
-              )}
+          <div className="flex items-center justify-between mb-6">
+            <h2 id="news-heading" className="text-2xl font-bold text-gray-900">
+              Najnovije vesti
+            </h2>
+            <Link href="/vesti" className="text-brand-blue font-medium text-sm hover:underline">
+              Sve vesti →
+            </Link>
+          </div>
+          {latestNews.length > 0 ? (
+            <NewsSlider articles={latestNews} />
+          ) : (
+            <div className="card p-8 text-center text-gray-400">
+              <p>Vesti uskoro...</p>
             </div>
+          )}
+        </div>
+      </section>
 
-            {/* Quick Links */}
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                Brzi pristup
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {quickLinks.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className="card p-5 group"
-                  >
-                    <span className="text-3xl" role="img" aria-hidden="true">
-                      {item.icon}
-                    </span>
-                    <h3 className="font-semibold text-gray-900 mt-3 mb-1 group-hover:text-brand-blue transition-colors">
-                      {item.title}
-                    </h3>
-                    <p className="text-gray-500 text-sm">{item.desc}</p>
-                  </Link>
-                ))}
-              </div>
-            </div>
+      {/* Quick Links */}
+      <section className="section-padding" aria-labelledby="quick-heading">
+        <div className="container-max">
+          <h2 id="quick-heading" className="text-2xl font-bold text-gray-900 mb-6">
+            Brzi pristup
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {quickLinks.map((item) => (
+              <Link key={item.href} href={item.href} className="card p-5 group">
+                <span className="text-3xl" role="img" aria-hidden="true">
+                  {item.icon}
+                </span>
+                <h3 className="font-semibold text-gray-900 mt-3 mb-1 group-hover:text-brand-blue transition-colors">
+                  {item.title}
+                </h3>
+                <p className="text-gray-500 text-sm">{item.desc}</p>
+              </Link>
+            ))}
           </div>
         </div>
       </section>

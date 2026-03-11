@@ -24,3 +24,16 @@ export interface NavLink {
   label: string;
   href: string;
 }
+
+export interface JunioriPost {
+  slug: string;
+  title: string;
+  date: string;
+  excerpt: string;
+  type: "video" | "gallery";
+  coverImage: string | null;
+  videoSrc?: string;
+  images: string[];
+  author: string;
+  tags: string[];
+}
