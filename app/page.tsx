@@ -1,6 +1,7 @@
 import Link from "next/link";
 import HeroSection from "@/components/HeroSection";
 import NewsSlider from "@/components/NewsSlider";
+import Img from "@/components/Img";
 import { getAllArticles } from "@/lib/mdx";
 
 const quickLinks = [
@@ -100,8 +101,14 @@ export default function HomePage() {
                   href={`/blog/${post.slug}`}
                   className="card group overflow-hidden"
                 >
-                  <div className="h-40 bg-brand-blue-light flex items-center justify-center">
-                    <span className="text-5xl opacity-30 group-hover:opacity-50 transition-opacity">📝</span>
+                  <div className="relative h-40 bg-brand-blue-light overflow-hidden">
+                    {post.image ? (
+                      <Img src={post.image} alt={post.title} fill className="object-cover group-hover:scale-105 transition-transform duration-300" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <span className="text-5xl opacity-30">📝</span>
+                      </div>
+                    )}
                   </div>
                   <div className="p-5">
                     <p className="text-xs text-brand-gray-text mb-2 uppercase tracking-wider">
