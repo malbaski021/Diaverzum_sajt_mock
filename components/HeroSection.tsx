@@ -24,7 +24,7 @@ export default function HeroSection() {
               className="w-2 h-2 rounded-full bg-blue-300 animate-pulse"
               aria-hidden="true"
             />
-            Udruženje dijabetičara Novi Sad
+            Udruženje osoba sa dijabetesom Novi Sad
           </div>
 
           <h1 id="hero-heading" className="text-5xl font-bold leading-tight mb-6">
