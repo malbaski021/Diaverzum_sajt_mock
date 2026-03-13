@@ -26,6 +26,12 @@ const members = [
     image: "/content/clanovi/Aleksa Atanackovic.png",
     bio: "Upoznajte Aleksu. Aleksa je bloger, propala viralna pojava na Instagramu, i dijabetičar — što znači da fotografiše hranu koju ne sme da jede i dobija lajkove od ljudi koji ne znaju da on plače iznutra. Torbica mu izgleda kao mali farmaceutski magacin — insulin, glukometar, rezervne igle, i negde na dnu, ring svetlo za reels u kojima objašnjava \"moj dijabetes journey\". Na svakoj proslavi on je onaj koji pita \"a ima li ovo šećera?\" — pa to snimi za story.",
   },
+  {
+    name: "Jovana Živić",
+    role: "Nutricionista (diploma postoji, razum diskutabilan)",
+    image: "/content/clanovi/Jovana Zivic.png",
+    bio: "Upoznajte Jovanu Živić. Jovana je nutricionista, dijabetičar, i influenser — što je otprilike kao kad vatrogasac dođe na posao u benzinom natopljenom odelu. Vodi Instagram stranu NutriDijabetes, a ustvari se fotografiše po teretanama sa izrazom lica čoveka koji je pronašao smisao života, dok je glukometaru u torbici iskočio osigurač od visokog šećera. Svaki njen post počinje sa \"danas sam izabrala zdravlje\" — a završava se privatnom porukom doktoru u 11 uveče. Jovana zna sve o dijabetesu. Jovana zna tačno šta sme, a šta ne sme da jede. Jovana svejedno to ne poštuje, ali zato to radi sa savršenim osvetljenjem i filterom koji je u stanju da izgladi i glikemijsku krivu, pa čak i da insulinu da estetski izgled smoothija od spanaća. Njen životni moto je \"Neću umreti, a sve ostalo je rešivo\" — što je izjavila dok je u jednoj ruci držala merač šećera, a u drugoj parče čokolade koju je proglasila \"terapeutskom dozom\".",
+  },
 ];
 
 export default function ClanoviPage() {

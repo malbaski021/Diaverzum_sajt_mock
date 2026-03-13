@@ -7,20 +7,47 @@ function getContentDir(section: "vesti" | "blog") {
   return path.join(process.cwd(), "content", section);
 }
 
-// Finds MDX file inside a folder (e.g. content/vesti/slug/slug.mdx)
 function findMdxInFolder(folderPath: string): string | null {
   const files = fs.readdirSync(folderPath).filter((f) => f.endsWith(".mdx"));
   return files.length > 0 ? path.join(folderPath, files[0]) : null;
 }
 
-// Returns public image URL if image.* exists in the folder
-function findFolderImage(section: "vesti" | "blog", slug: string): string | null {
+// Looks for image in public/ (legacy) or co-located in content folder, copies to public if needed
+function findFolderImage(
+  section: "vesti" | "blog",
+  folderName: string,
+  slug: string
+): string | null {
   const publicDir = path.join(process.cwd(), "public", "content", section, slug);
-  if (!fs.existsSync(publicDir)) return null;
-  const img = fs.readdirSync(publicDir).find((f) =>
-    /\.(png|jpg|jpeg|webp)$/i.test(f)
-  );
-  return img ? `/content/${section}/${slug}/${img}` : null;
+
+  // Check public folder first
+  if (fs.existsSync(publicDir)) {
+    const img = fs.readdirSync(publicDir).find((f) =>
+      /\.(png|jpg|jpeg|webp)$/i.test(f)
+    );
+    if (img) return `/content/${section}/${slug}/${img}`;
+  }
+
+  // Check co-located in content folder
+  if (folderName) {
+    const contentDir = path.join(process.cwd(), "content", section, folderName);
+    if (fs.existsSync(contentDir)) {
+      const img = fs.readdirSync(contentDir).find((f) =>
+        /\.(png|jpg|jpeg|webp)$/i.test(f)
+      );
+      if (img) {
+        // Copy to public so Next.js can serve it
+        fs.mkdirSync(publicDir, { recursive: true });
+        fs.copyFileSync(
+          path.join(contentDir, img),
+          path.join(publicDir, img)
+        );
+        return `/content/${section}/${slug}/${img}`;
+      }
+    }
+  }
+
+  return null;
 }
 
 export function getAllArticles(section: "vesti" | "blog"): ArticleMeta[] {
@@ -33,12 +60,14 @@ export function getAllArticles(section: "vesti" | "blog"): ArticleMeta[] {
     .map((entry) => {
       let slug: string;
       let mdxPath: string;
+      let folderName = "";
 
       if (entry.isDirectory()) {
-        slug = entry.name;
         const found = findMdxInFolder(path.join(dir, entry.name));
         if (!found) return null;
+        slug = path.basename(found, ".mdx"); // MDX filename is the slug
         mdxPath = found;
+        folderName = entry.name;
       } else if (entry.isFile() && entry.name.endsWith(".mdx")) {
         slug = entry.name.replace(/\.mdx$/, "");
         mdxPath = path.join(dir, entry.name);
@@ -48,8 +77,7 @@ export function getAllArticles(section: "vesti" | "blog"): ArticleMeta[] {
 
       const raw = fs.readFileSync(mdxPath, "utf-8");
       const { data } = matter(raw);
-      const image =
-        data.image || findFolderImage(section, slug) || null;
+      const image = data.image || findFolderImage(section, folderName, slug) || null;
 
       return {
         slug,
@@ -74,12 +102,22 @@ export function getArticleBySlug(
 ): { meta: ArticleMeta; content: string } | null {
   const dir = getContentDir(section);
 
-  // Try folder-based first
-  const folderPath = path.join(dir, slug);
   let mdxPath: string | null = null;
+  let folderName = "";
 
-  if (fs.existsSync(folderPath) && fs.statSync(folderPath).isDirectory()) {
-    mdxPath = findMdxInFolder(folderPath);
+  // Search all directories for MDX file whose name matches the slug
+  if (fs.existsSync(dir)) {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (entry.isDirectory()) {
+        const folderPath = path.join(dir, entry.name);
+        const found = findMdxInFolder(folderPath);
+        if (found && path.basename(found, ".mdx") === slug) {
+          mdxPath = found;
+          folderName = entry.name;
+          break;
+        }
+      }
+    }
   }
 
   // Fallback: flat .mdx file
@@ -92,7 +130,7 @@ export function getArticleBySlug(
 
   const raw = fs.readFileSync(mdxPath, "utf-8");
   const { data, content } = matter(raw);
-  const image = data.image || findFolderImage(section, slug) || null;
+  const image = data.image || findFolderImage(section, folderName, slug) || null;
 
   return {
     meta: {
@@ -112,13 +150,16 @@ export function getAllSlugs(section: "vesti" | "blog"): string[] {
   const dir = getContentDir(section);
   if (!fs.existsSync(dir)) return [];
 
-  return fs
-    .readdirSync(dir, { withFileTypes: true })
-    .map((entry) => {
-      if (entry.isDirectory()) return entry.name;
-      if (entry.isFile() && entry.name.endsWith(".mdx"))
-        return entry.name.replace(/\.mdx$/, "");
-      return null;
-    })
-    .filter(Boolean) as string[];
+  const slugs: string[] = [];
+
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (entry.isDirectory()) {
+      const found = findMdxInFolder(path.join(dir, entry.name));
+      if (found) slugs.push(path.basename(found, ".mdx"));
+    } else if (entry.isFile() && entry.name.endsWith(".mdx")) {
+      slugs.push(entry.name.replace(/\.mdx$/, ""));
+    }
+  }
+
+  return slugs;
 }

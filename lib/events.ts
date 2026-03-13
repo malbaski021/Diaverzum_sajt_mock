@@ -60,7 +60,7 @@ function getImages(slug: string): string[] {
 }
 
 export function getAllEvents(): EventData[] {
-  const blogDir = path.join(process.cwd(), "content", "blog");
+  const blogDir = path.join(process.cwd(), "content", "dogadjaji");
   if (!fs.existsSync(blogDir)) return [];
 
   return Object.entries(EVENT_MAP)

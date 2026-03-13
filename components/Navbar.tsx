@@ -10,6 +10,7 @@ const navLinks = [
   { label: "O nama", href: "/o-nama" },
   { label: "Vesti", href: "/vesti" },
   { label: "O dijabetesu", href: "/o-dijabetesu" },
+  { label: "Događaji", href: "/dogadjaji" },
   { label: "Blog", href: "/blog" },
   { label: "Članovi", href: "/clanovi" },
   { label: "Kontakt", href: "/kontakt" },
