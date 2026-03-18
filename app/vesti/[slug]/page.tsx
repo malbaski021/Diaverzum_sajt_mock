@@ -74,17 +74,17 @@ export default function VestiSlugPage({ params }: Props) {
         {/* Image + text side by side */}
         {meta.image ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-            <div className="relative rounded-xl overflow-hidden aspect-[4/3] md:aspect-auto md:min-h-[340px]">
+            <div className="rounded-xl overflow-hidden">
               <Img
                 src={meta.image}
                 alt={meta.title}
-                fill
-                className="object-cover"
+                width={800}
+                height={600}
+                className="w-full h-auto"
                 priority
-                sizes="(max-width: 768px) 100vw, 50vw"
               />
             </div>
-            <div className="flex flex-col justify-center">
+            <div className="flex flex-col justify-start">
               <div className="prose max-w-none">
                 <MDXRemote source={content} />
               </div>
