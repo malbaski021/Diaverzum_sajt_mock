@@ -4,7 +4,7 @@ import Link from "next/link";
 import Img from "@/components/Img";
 import { getEventBySlug, getAllEventSlugs } from "@/lib/events";
 import { format } from "date-fns";
-import { sr } from "date-fns/locale";
+import { srLatn } from "date-fns/locale";
 import ImageGallery from "@/components/ImageGallery";
 
 interface Props {
@@ -53,7 +53,7 @@ export default function DogadjajPage({ params }: Props) {
           </span>
           <h1 className="text-gray-900 mb-2">{event.title}</h1>
           <time dateTime={event.date} className="text-sm text-brand-gray-text">
-            {format(new Date(event.date), "d. MMMM yyyy.", { locale: sr })}
+            {format(new Date(event.date), "d. MMMM yyyy.", { locale: srLatn })}
           </time>
         </div>
 

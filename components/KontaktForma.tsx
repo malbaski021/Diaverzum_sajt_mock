@@ -86,6 +86,10 @@ export default function KontaktForma() {
               />
             </div>
 
+            <p className="text-xs text-gray-400 leading-relaxed">
+              Slanjem ovog formulara saglasni ste da Vaše ime i email adresu koristimo isključivo u svrhu odgovora na Vaše pitanje. Podatke ne delimo sa trećim stranama niti ih koristimo u marketinške svrhe. U skladu sa GDPR regulativom, imate pravo na uvid, ispravku i brisanje Vaših podataka.
+            </p>
+
             {status === "error" && (
               <p className="text-red-600 text-sm">Došlo je do greške. Pokušajte ponovo ili nas kontaktirajte direktno.</p>
             )}

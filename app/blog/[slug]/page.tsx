@@ -5,7 +5,7 @@ import Img from "@/components/Img";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import { getArticleBySlug, getAllSlugs } from "@/lib/mdx";
 import { format } from "date-fns";
-import { sr } from "date-fns/locale";
+import { srLatn } from "date-fns/locale";
 
 interface Props {
   params: { slug: string };
@@ -57,7 +57,7 @@ export default function BlogSlugPage({ params }: Props) {
             <span>{meta.author}</span>
             <span aria-hidden="true">·</span>
             <time dateTime={meta.date}>
-              {format(new Date(meta.date), "d. MMMM yyyy.", { locale: sr })}
+              {format(new Date(meta.date), "d. MMMM yyyy.", { locale: srLatn })}
             </time>
           </div>
           {meta.image && (

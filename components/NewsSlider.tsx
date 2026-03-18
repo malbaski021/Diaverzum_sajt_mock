@@ -5,7 +5,7 @@ import Link from "next/link";
 import Img from "@/components/Img";
 import { ArticleMeta } from "@/types";
 import { format } from "date-fns";
-import { sr } from "date-fns/locale";
+import { srLatn } from "date-fns/locale";
 
 interface Props {
   articles: ArticleMeta[];
@@ -52,7 +52,7 @@ export default function NewsSlider({ articles }: Props) {
               dateTime={article.date}
               className="text-xs text-brand-gray-text font-medium uppercase tracking-wider"
             >
-              {format(new Date(article.date), "d. MMMM yyyy.", { locale: sr })}
+              {format(new Date(article.date), "d. MMMM yyyy.", { locale: srLatn })}
             </time>
             <h3 className="text-2xl font-bold text-gray-900 mt-3 mb-3 line-clamp-3 leading-snug">
               {article.title}

@@ -7,7 +7,7 @@ import Link from "next/link";
 import Img from "@/components/Img";
 import { EventData } from "@/lib/events";
 import { format } from "date-fns";
-import { sr } from "date-fns/locale";
+import { srLatn } from "date-fns/locale";
 
 interface Props {
   events: EventData[];
@@ -94,13 +94,10 @@ export default function EventsSearch({ events }: Props) {
                     📸 {event.images.length}
                   </div>
                 )}
-                <div className="absolute top-2 left-2 bg-brand-blue text-white text-xs font-semibold px-2 py-0.5 rounded-full">
-                  Događaj
-                </div>
               </div>
               <div className="p-5">
                 <time dateTime={event.date} className="text-xs text-brand-gray-text uppercase tracking-wider">
-                  {format(new Date(event.date), "d. MMMM yyyy.", { locale: sr })}
+                  {format(new Date(event.date), "d. MMMM yyyy.", { locale: srLatn })}
                 </time>
                 <h3 className="font-bold text-gray-900 mt-2 mb-2 group-hover:text-brand-blue transition-colors">
                   {event.title}

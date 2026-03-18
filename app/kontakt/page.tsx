@@ -16,8 +16,8 @@ const contactInfo = [
       </svg>
     ),
     label: "Telefon",
-    value: "+381 21 XXX XXXX",
-    href: "tel:+38121XXXXXXX",
+    value: "+381 63 570 251",
+    href: "tel:+38163570251",
   },
   {
     icon: (
@@ -71,9 +71,12 @@ export default function KontaktPage() {
           {/* Left: Info */}
           <div>
             <h1 className="text-gray-900 mb-4">Kontakt</h1>
-            <p className="text-xl text-gray-500 leading-relaxed mb-10">
+            <p className="text-xl text-gray-500 leading-relaxed mb-3">
               Tu smo za vas. Javite nam se telefonom, emailom ili nas posetite
               lično u našim prostorijama u Novom Sadu.
+            </p>
+            <p className="text-sm text-gray-400 mb-10">
+              Za ličnu posetu molimo vas da se unapred najavite telefonskim putem.
             </p>
 
             <div className="space-y-6">

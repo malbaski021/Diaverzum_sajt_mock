@@ -2,7 +2,7 @@ import Link from "next/link";
 import Img from "@/components/Img";
 import { ArticleMeta } from "@/types";
 import { format } from "date-fns";
-import { sr } from "date-fns/locale";
+import { srLatn } from "date-fns/locale";
 
 interface Props {
   article: ArticleMeta;
@@ -58,7 +58,7 @@ export default function ArticleCard({ article, section }: Props) {
         <div className="flex items-center justify-between text-xs text-gray-400">
           <span>{article.author}</span>
           <time dateTime={article.date}>
-            {format(new Date(article.date), "d. MMM yyyy.", { locale: sr })}
+            {format(new Date(article.date), "d. MMM yyyy.", { locale: srLatn })}
           </time>
         </div>
       </div>
