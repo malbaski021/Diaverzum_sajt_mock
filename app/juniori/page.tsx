@@ -8,7 +8,7 @@ const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 export const metadata: Metadata = {
   title: "Diaverzum Juniori",
   description:
-    "Prostor za mlade dijabetičare — videi, galerije i priče koje klinci prave sami.",
+    "Prostor za mlade sa dijabetesom — video, galerije i priče koje klinci prave sami.",
 };
 
 export default function JunioriPage() {
@@ -30,8 +30,8 @@ export default function JunioriPage() {
           </div>
           <div className="max-w-2xl">
             <p className="text-lg text-blue-100 leading-relaxed">
-              Prostor za mlade dijabetičare. Ovde klinci prave sadržaj sami —
-              videi, recepti, priče i slike iz pravog života sa dijabetesom.
+              Prostor za mlade sa dijabetesom. Ovde klinci prave sadržaj sami —
+              video, recepti, priče i slike iz pravog života sa dijabetesom.
             </p>
           </div>
           <Link

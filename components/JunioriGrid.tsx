@@ -104,7 +104,7 @@ export default function JunioriGrid({ posts }: { posts: JunioriPost[] }) {
 
   const tabs: { id: Filter; label: string }[] = [
     { id: "sve", label: "Sve" },
-    { id: "video", label: "Videi" },
+    { id: "video", label: "Video" },
     { id: "gallery", label: "Galerije" },
   ];
 
