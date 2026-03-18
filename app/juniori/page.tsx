@@ -19,13 +19,12 @@ export default function JunioriPage() {
       {/* Hero */}
       <section className="bg-gradient-to-br from-brand-blue to-[#003d80] text-white">
         <div className="container-max px-4 py-16 flex flex-col items-center text-center gap-6">
-          <div style={{ height: "140px", overflow: "hidden", display: "flex", alignItems: "center" }}>
+          <div style={{ height: "140px", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={`${BASE}/diaverzum-logo-juniors.png`}
               alt="Diaverzum Juniori"
-              style={{ height: "320px", width: "auto", objectFit: "cover" }}
-              priority-hint="high"
+              style={{ height: "320px", width: "auto", objectFit: "cover", flexShrink: 0 }}
             />
           </div>
           <div className="max-w-2xl">
