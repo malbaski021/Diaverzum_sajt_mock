@@ -12,6 +12,7 @@ export default function KontaktForma() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setStatus("loading");
+    console.log("KEY:", WEB3FORMS_KEY);
 
     try {
       const res = await fetch("https://api.web3forms.com/submit", {
@@ -26,6 +27,7 @@ export default function KontaktForma() {
         }),
       });
       const data = await res.json();
+      console.log("Web3Forms response:", data);
       if (data.success) {
         setStatus("sent");
       } else {
