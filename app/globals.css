@@ -59,6 +59,10 @@
     @apply border-l-4 border-brand-blue pl-4 italic text-gray-600 my-6;
   }
   .prose strong { @apply font-semibold text-gray-900; }
+  .prose .img-left-sm { float: left; width: 21% !important; max-width: 21% !important; margin-right: 24px; margin-bottom: 16px; border-radius: 10px; }
+  .prose .img-left { float: left; width: 42% !important; max-width: 42% !important; margin-right: 24px; margin-bottom: 16px; border-radius: 10px; }
+  .prose .img-right { float: right; width: 42% !important; max-width: 42% !important; margin-left: 24px; margin-bottom: 16px; border-radius: 10px; }
+  .prose .img-clear { clear: both; }
   .prose code {
     @apply bg-gray-100 text-brand-blue px-1 py-0.5 rounded text-sm font-mono;
   }

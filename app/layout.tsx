@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   },
   description:
     "Udruženje obolelih od dijabetesa Diaverzum Novi Sad — podrška, informacije i zajednica za osobe sa dijabetesom.",
-  keywords: ["dijabetes", "udruženje", "Novi Sad", "dijabetičari", "zdravlje"],
+  keywords: ["dijabetes", "udruženje", "Novi Sad", "osobe sa dijabetesom", "zdravlje"],
   openGraph: {
     siteName: "Diaverzum Novi Sad",
     locale: "sr_RS",

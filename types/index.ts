@@ -3,6 +3,7 @@ export interface ArticleMeta {
   date: string;
   excerpt: string;
   image?: string;
+  noHero?: boolean;
   author: string;
   tags: string[];
   slug: string;

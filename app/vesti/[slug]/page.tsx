@@ -72,7 +72,7 @@ export default function VestiSlugPage({ params }: Props) {
         </div>
 
         {/* Image + text side by side */}
-        {meta.image ? (
+        {meta.image && !meta.noHero ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
             <div className="rounded-xl overflow-hidden">
               <Img
@@ -92,7 +92,7 @@ export default function VestiSlugPage({ params }: Props) {
           </div>
         ) : (
           /* No image — full width content */
-          <div className="max-w-3xl">
+          <div className="w-full">
             <div className="prose max-w-none">
               <MDXRemote source={content} />
             </div>

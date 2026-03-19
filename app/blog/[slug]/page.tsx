@@ -54,13 +54,13 @@ export default function BlogSlugPage({ params }: Props) {
           )}
           <h1 className="text-gray-900 mb-4">{meta.title}</h1>
           <div className="flex items-center gap-4 text-sm text-gray-400 mb-8 pb-8 border-b border-brand-gray-mid">
-            <span>{meta.author}</span>
+            <span>Autor: {meta.author}</span>
             <span aria-hidden="true">·</span>
             <time dateTime={meta.date}>
               {format(new Date(meta.date), "d. MMMM yyyy.", { locale: srLatn })}
             </time>
           </div>
-          {meta.image && (
+          {meta.image && !meta.noHero && (
             <div className="relative h-64 md:h-96 rounded-xl overflow-hidden mb-8">
               <Img src={meta.image} alt={meta.title} fill className="object-cover" priority />
             </div>

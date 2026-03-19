@@ -41,17 +41,6 @@ const contactInfo = [
     value: "Bulevar Oslobođenja 33, 21000 Novi Sad",
     href: "https://maps.google.com/?q=Novi+Sad",
   },
-  {
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-        <circle cx="12" cy="12" r="10" />
-        <polyline points="12 6 12 12 16 14" />
-      </svg>
-    ),
-    label: "Radno vreme",
-    value: "Pon–Pet: 09:00–17:00",
-    href: undefined,
-  },
 ];
 
 export default function KontaktPage() {

@@ -85,6 +85,7 @@ export function getAllArticles(section: "vesti" | "blog"): ArticleMeta[] {
         date: data.date ?? "",
         excerpt: data.excerpt ?? "",
         image,
+        noHero: data.noHero ?? false,
         author: data.author ?? "",
         tags: data.tags ?? [],
       } as ArticleMeta;
@@ -139,6 +140,7 @@ export function getArticleBySlug(
       date: data.date ?? "",
       excerpt: data.excerpt ?? "",
       image,
+      noHero: data.noHero ?? false,
       author: data.author ?? "",
       tags: data.tags ?? [],
     },

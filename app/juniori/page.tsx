@@ -37,7 +37,7 @@ export default function JunioriPage() {
             href="/kontakt"
             className="mt-2 inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-brand-blue font-semibold text-sm hover:bg-blue-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
           >
-            Želi da učestvuješ?
+            Želiš da učestvuješ?
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
               <line x1="5" y1="12" x2="19" y2="12" />
               <polyline points="12 5 19 12 12 19" />
