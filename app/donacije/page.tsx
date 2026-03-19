@@ -18,13 +18,13 @@ const ways = [
     title: "Uplata na račun",
     content: (
       <div className="space-y-2 text-sm text-gray-700">
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+        <div className="grid gap-x-4 gap-y-1" style={{ gridTemplateColumns: "auto 1fr" }}>
           <span className="text-gray-400">Naziv primaoca</span>
           <span className="font-medium">Diaverzum Novi Sad</span>
           <span className="text-gray-400">Banka</span>
           <span className="font-medium">Banka Intesa</span>
           <span className="text-gray-400">Broj računa</span>
-          <span className="font-mono font-medium">160600000172623674</span>
+          <span className="font-mono font-bold">160-6000001726236-74</span>
         </div>
       </div>
     ),

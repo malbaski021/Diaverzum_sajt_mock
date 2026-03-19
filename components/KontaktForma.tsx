@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-const WEB3FORMS_KEY = process.env.NEXT_PUBLIC_WEB3FORMS_KEY ?? "37e040e8-58cf-4b50-b681-4204e602e3f6";
+const WEB3FORMS_KEY = process.env.NEXT_PUBLIC_WEB3FORMS_KEY ?? "8f0bac80-53f7-4afd-9e85-74b7ae3c4cb7";
 
 export default function KontaktForma() {
   const [status, setStatus] = useState<"idle" | "loading" | "sent" | "error">("idle");
