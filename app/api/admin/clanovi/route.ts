@@ -82,15 +82,11 @@ export async function POST(req: NextRequest) {
       const publicPath = `public/content/clanovi/${filename}`;
       const contentPath = `content/clanovi/${filename}`;
 
-      const [publicSha, contentSha] = await Promise.all([
-        getFileSha(publicPath),
-        getFileSha(contentPath),
-      ]);
+      const publicSha = await getFileSha(publicPath);
+      await putFile(publicPath, base64, `Admin: dodaj sliku za ${name}`, publicSha);
 
-      await Promise.all([
-        putFile(publicPath, base64, `Admin: dodaj sliku za ${name}`, publicSha),
-        putFile(contentPath, base64, `Admin: dodaj sliku za ${name}`, contentSha),
-      ]);
+      const contentSha = await getFileSha(contentPath);
+      await putFile(contentPath, base64, `Admin: dodaj sliku za ${name}`, contentSha);
 
       imagePath = `/content/clanovi/${filename}`;
     }
