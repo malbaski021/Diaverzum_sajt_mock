@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
+import SiteShell from "@/components/SiteShell";
 
 export const metadata: Metadata = {
   title: {
@@ -26,12 +25,7 @@ export default function RootLayout({
   return (
     <html lang="sr">
       <body>
-        <a href="#main-content" className="skip-to-content">
-          Preskoči na sadržaj
-        </a>
-        <Navbar />
-        <main id="main-content">{children}</main>
-        <Footer />
+        <SiteShell>{children}</SiteShell>
       </body>
     </html>
   );
