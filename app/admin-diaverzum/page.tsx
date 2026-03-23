@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 const EXISTING_TAGS = [
   "iskustvo", "tip 1", "lični stav", "izlet", "sport", "kopaonik",
@@ -18,6 +18,50 @@ export default function AdminPage() {
   const [izvor, setIzvor] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState<{ ok: boolean; msg: string } | null>(null);
+
+  const nameRef = useRef<HTMLInputElement>(null);
+  const bioRef = useRef<HTMLTextAreaElement>(null);
+  const imageRef = useRef<HTMLInputElement>(null);
+
+  async function handleUpload() {
+    if (section !== "clanovi") return;
+
+    const name = nameRef.current?.value.trim() ?? "";
+    const bio = bioRef.current?.value.trim() ?? "";
+    const image = imageRef.current?.files?.[0] ?? null;
+
+    if (!name) {
+      setStatus({ ok: false, msg: "Ime i prezime su obavezni." });
+      return;
+    }
+
+    setLoading(true);
+    setStatus(null);
+
+    const formData = new FormData();
+    formData.append("name", name);
+    formData.append("bio", bio);
+    if (image) formData.append("image", image);
+
+    try {
+      const res = await fetch("/api/admin/clanovi", { method: "POST", body: formData });
+      const data = await res.json();
+      if (res.ok) {
+        setStatus({ ok: true, msg: "Član uspešno dodat! Sajt će se ažurirati za koji minut." });
+        if (nameRef.current) nameRef.current.value = "";
+        if (bioRef.current) bioRef.current.value = "";
+        if (imageRef.current) imageRef.current.value = "";
+      } else {
+        setStatus({ ok: false, msg: data.error ?? "Greška pri uploadu." });
+      }
+    } catch {
+      setStatus({ ok: false, msg: "Greška pri uploadu." });
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const toggleTag = (tag: string) => {
     setTags((prev) =>
@@ -65,6 +109,7 @@ export default function AdminPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Ime i prezime</label>
                 <input
+                  ref={nameRef}
                   type="text"
                   placeholder="Ime i prezime..."
                   className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-blue"
@@ -88,6 +133,7 @@ export default function AdminPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Slika</label>
               <input
+                ref={imageRef}
                 type="file"
                 accept="image/*"
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-700 file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-brand-blue-light file:text-brand-blue cursor-pointer"
@@ -110,6 +156,7 @@ export default function AdminPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Tekst</label>
               <textarea
+                ref={bioRef}
                 rows={6}
                 placeholder="Unesi tekst..."
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-blue resize-none"
@@ -215,9 +262,20 @@ export default function AdminPage() {
               </div>
             )}
 
+            {/* Status poruka */}
+            {status && (
+              <p className={`text-sm font-medium ${status.ok ? "text-green-600" : "text-red-600"}`}>
+                {status.msg}
+              </p>
+            )}
+
             {/* Upload dugme */}
-            <button className="w-full bg-brand-blue text-white font-semibold py-3 rounded-lg hover:bg-brand-blue-dark transition-colors">
-              Upload
+            <button
+              onClick={handleUpload}
+              disabled={loading}
+              className="w-full bg-brand-blue text-white font-semibold py-3 rounded-lg hover:bg-brand-blue-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? "Uploading..." : "Upload"}
             </button>
           </div>
         )}
