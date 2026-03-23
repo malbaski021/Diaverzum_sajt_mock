@@ -7,27 +7,27 @@ const GITHUB_BRANCH = process.env.GITHUB_BRANCH ?? "develop";
 
 const GITHUB_API = "https://api.github.com";
 
-// Enkodira samo segmente putanje (ne i slash-eve)
 function encodePath(path: string): string {
   return path.split("/").map(encodeURIComponent).join("/");
 }
 
-async function getFileSha(path: string): Promise<string | null> {
+async function getFileContent(path: string): Promise<{ content: string; sha: string } | null> {
   const res = await fetch(
     `${GITHUB_API}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${encodePath(path)}?ref=${GITHUB_BRANCH}`,
     { headers: { Authorization: `Bearer ${GITHUB_TOKEN}`, "X-GitHub-Api-Version": "2022-11-28" } }
   );
   if (!res.ok) return null;
   const data = await res.json();
-  return data.sha ?? null;
+  return { content: data.content, sha: data.sha };
+}
+
+async function getFileSha(path: string): Promise<string | null> {
+  const file = await getFileContent(path);
+  return file?.sha ?? null;
 }
 
 async function putFile(path: string, base64Content: string, message: string, sha?: string | null) {
-  const body: Record<string, unknown> = {
-    message,
-    content: base64Content,
-    branch: GITHUB_BRANCH,
-  };
+  const body: Record<string, unknown> = { message, content: base64Content, branch: GITHUB_BRANCH };
   if (sha) body.sha = sha;
 
   const res = await fetch(
@@ -49,16 +49,6 @@ async function putFile(path: string, base64Content: string, message: string, sha
   return res.json();
 }
 
-async function getFileContent(path: string): Promise<{ content: string; sha: string } | null> {
-  const res = await fetch(
-    `${GITHUB_API}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${encodePath(path)}?ref=${GITHUB_BRANCH}`,
-    { headers: { Authorization: `Bearer ${GITHUB_TOKEN}`, "X-GitHub-Api-Version": "2022-11-28" } }
-  );
-  if (!res.ok) return null;
-  const data = await res.json();
-  return { content: data.content, sha: data.sha };
-}
-
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
@@ -70,14 +60,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Ime je obavezno." }, { status: 400 });
     }
 
+    // Učitaj JSON jednom na početku
+    const jsonPath = "content/clanovi/clanovi.json";
+    const jsonFile = await getFileContent(jsonPath);
+    if (!jsonFile) {
+      return NextResponse.json({ error: "Ne mogu da učitam clanovi.json." }, { status: 500 });
+    }
+
+    const decoded = Buffer.from(jsonFile.content.replace(/\n/g, ""), "base64").toString("utf-8");
+    const members = JSON.parse(decoded) as { id?: number; name: string; role: string; image: string; bio: string }[];
+    const filtered = members.filter((m) => m.name.trim() !== "");
+    const newId = filtered.reduce((max, m) => Math.max(max, m.id ?? 0), 0) + 1;
+
     let imagePath = "";
 
-    // Upload slike ako postoji
+    // Upload slike
     if (image && image.size > 0) {
-      const ext = image.name.split(".").pop() ?? "jpg";
-      const filename = `${name}.${ext}`;
-      const arrayBuffer = await image.arrayBuffer();
-      const base64 = Buffer.from(arrayBuffer).toString("base64");
+      const ext = image.name.split(".").pop()?.toLowerCase() ?? "jpg";
+      const filename = `${name} ${newId}.${ext}`;
+      const base64 = Buffer.from(await image.arrayBuffer()).toString("base64");
 
       const publicPath = `public/content/clanovi/${filename}`;
       const contentPath = `content/clanovi/${filename}`;
@@ -91,23 +92,10 @@ export async function POST(req: NextRequest) {
       imagePath = `/content/clanovi/${filename}`;
     }
 
-    // Pročitaj i ažuriraj clanovi.json
-    const jsonPath = "content/clanovi/clanovi.json";
-    const jsonFile = await getFileContent(jsonPath);
-    if (!jsonFile) {
-      return NextResponse.json({ error: "Ne mogu da učitam clanovi.json." }, { status: 500 });
-    }
-
-    const decoded = Buffer.from(jsonFile.content.replace(/\n/g, ""), "base64").toString("utf-8");
-    const members = JSON.parse(decoded) as { name: string; role: string; image: string; bio: string }[];
-
-    // Ukloni prazan placeholder na kraju ako postoji
-    const filtered = members.filter((m) => m.name.trim() !== "");
-
-    filtered.push({ name, role: "", image: imagePath, bio });
-
+    // Ažuriraj JSON
+    filtered.push({ id: newId, name, role: "", image: imagePath, bio });
     const updatedBase64 = Buffer.from(JSON.stringify(filtered, null, 2)).toString("base64");
-    await putFile(jsonPath, updatedBase64, `Admin: dodaj člana ${name}`, jsonFile.sha);
+    await putFile(jsonPath, updatedBase64, `Admin: dodaj člana ${name} (ID: ${newId})`, jsonFile.sha);
 
     return NextResponse.json({ success: true });
   } catch (err) {
