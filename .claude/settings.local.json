@@ -10,7 +10,30 @@
       "Bash(curl:*)",
       "Bash(taskkill:*)",
       "Bash(do:*)",
-      "Bash(gh auth:*)"
+      "Bash(gh auth:*)",
+      "Bash(netstat -ano | grep \":3000\\\\|:3001\" | head -10)",
+      "Bash(cmd /c \"taskkill /PID 27596 /F & taskkill /PID 4472 /F\")",
+      "Bash(cmd /c \"taskkill /IM node.exe /F\")",
+      "Bash(netstat -ano | grep \":3000\\\\|:3001\")",
+      "Bash(cmd /c \"taskkill /F /PID 27596\" && cmd /c \"taskkill /F /PID 4472\" && cmd /c \"taskkill /F /PID 11356\")",
+      "Bash(cmd /c \"tasklist /FI \\\\\"PID eq 27596\\\\\" /FO LIST && tasklist /FI \\\\\"PID eq 4472\\\\\" /FO LIST\")",
+      "Bash(netstat -ano | grep \":3000\")",
+      "Bash(cmd /c \"taskkill /F /PID 25004\")",
+      "Bash(cmd /c \"taskkill /F /PID 9624\")",
+      "Bash(npm list:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git checkout:*)",
+      "Bash(node:*)",
+      "Bash(cd:*)",
+      "Bash(ls:*)",
+      "Bash(magick:*)",
+      "Bash(cp \"D:/Diaverzum_sajt_mock/content/clanovi/Hana Ninković.jpg\" \"D:/Diaverzum_sajt_mock/public/content/clanovi/Hana Ninković.jpg\")",
+      "Bash(cp \"D:/Diaverzum_sajt_mock/content/clanovi/Mina Rakić.jpg\" \"D:/Diaverzum_sajt_mock/public/content/clanovi/Mina Rakić.jpg\")",
+      "Bash(netstat -ano)",
+      "Bash(cp \"D:/Diaverzum_sajt_mock/content/clanovi/Aleksa Atanacković.JPG\" \"D:/Diaverzum_sajt_mock/public/content/clanovi/Aleksa Atanacković.JPG\")",
+      "Bash(cp \"D:/Diaverzum_sajt_mock/content/clanovi/Ana Nedeljković.jpg\" \"D:/Diaverzum_sajt_mock/public/content/clanovi/Ana Nedeljković.jpg\")"
     ]
   }
 }
