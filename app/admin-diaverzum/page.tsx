@@ -264,9 +264,21 @@ export default function AdminPage() {
 
             {/* Status poruka */}
             {status && (
-              <p className={`text-sm font-medium ${status.ok ? "text-green-600" : "text-red-600"}`}>
+              <div className={`flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium ${status.ok ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
+                {status.ok ? (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="9 12 11 14 15 10" />
+                  </svg>
+                ) : (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12" y2="16" />
+                  </svg>
+                )}
                 {status.msg}
-              </p>
+              </div>
             )}
 
             {/* Upload dugme */}
