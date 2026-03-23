@@ -7,9 +7,14 @@ const GITHUB_BRANCH = process.env.GITHUB_BRANCH ?? "develop";
 
 const GITHUB_API = "https://api.github.com";
 
+// Enkodira samo segmente putanje (ne i slash-eve)
+function encodePath(path: string): string {
+  return path.split("/").map(encodeURIComponent).join("/");
+}
+
 async function getFileSha(path: string): Promise<string | null> {
   const res = await fetch(
-    `${GITHUB_API}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${encodeURIComponent(path)}?ref=${GITHUB_BRANCH}`,
+    `${GITHUB_API}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${encodePath(path)}?ref=${GITHUB_BRANCH}`,
     { headers: { Authorization: `Bearer ${GITHUB_TOKEN}`, "X-GitHub-Api-Version": "2022-11-28" } }
   );
   if (!res.ok) return null;
@@ -26,7 +31,7 @@ async function putFile(path: string, base64Content: string, message: string, sha
   if (sha) body.sha = sha;
 
   const res = await fetch(
-    `${GITHUB_API}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${encodeURIComponent(path)}`,
+    `${GITHUB_API}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${encodePath(path)}`,
     {
       method: "PUT",
       headers: {
@@ -46,7 +51,7 @@ async function putFile(path: string, base64Content: string, message: string, sha
 
 async function getFileContent(path: string): Promise<{ content: string; sha: string } | null> {
   const res = await fetch(
-    `${GITHUB_API}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${encodeURIComponent(path)}?ref=${GITHUB_BRANCH}`,
+    `${GITHUB_API}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${encodePath(path)}?ref=${GITHUB_BRANCH}`,
     { headers: { Authorization: `Bearer ${GITHUB_TOKEN}`, "X-GitHub-Api-Version": "2022-11-28" } }
   );
   if (!res.ok) return null;
