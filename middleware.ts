@@ -14,11 +14,11 @@ function checkAuth(req: NextRequest, user: string, pass: string, realm: string) 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Admin route — uvek zaštićen, kredencijali iz env
+  // Admin route — zaštićen samo kad su env varijable postavljene
   if (pathname.startsWith("/admin-diaverzum")) {
-    const user = process.env.ADMIN_USER ?? "";
-    const pass = process.env.ADMIN_PASS ?? "";
-    if (!checkAuth(req, user, pass, "Admin")) {
+    const user = process.env.ADMIN_USER;
+    const pass = process.env.ADMIN_PASS;
+    if (user && pass && !checkAuth(req, user, pass, "Admin")) {
       return new NextResponse("Unauthorized", {
         status: 401,
         headers: { "WWW-Authenticate": 'Basic realm="Admin"' },
