@@ -33,7 +33,12 @@
       "Bash(cp \"D:/Diaverzum_sajt_mock/content/clanovi/Mina Rakić.jpg\" \"D:/Diaverzum_sajt_mock/public/content/clanovi/Mina Rakić.jpg\")",
       "Bash(netstat -ano)",
       "Bash(cp \"D:/Diaverzum_sajt_mock/content/clanovi/Aleksa Atanacković.JPG\" \"D:/Diaverzum_sajt_mock/public/content/clanovi/Aleksa Atanacković.JPG\")",
-      "Bash(cp \"D:/Diaverzum_sajt_mock/content/clanovi/Ana Nedeljković.jpg\" \"D:/Diaverzum_sajt_mock/public/content/clanovi/Ana Nedeljković.jpg\")"
+      "Bash(cp \"D:/Diaverzum_sajt_mock/content/clanovi/Ana Nedeljković.jpg\" \"D:/Diaverzum_sajt_mock/public/content/clanovi/Ana Nedeljković.jpg\")",
+      "Bash(cmd.exe /c \"taskkill /PID 4108 /F\")",
+      "Bash(cmd.exe /c \"taskkill /PID 4108 /F 2>&1\")",
+      "Bash(echo \"exit: $?\")",
+      "Bash(cmd.exe /c \"tasklist /FI \\\\\"PID eq 4108\\\\\" /FO LIST\")",
+      "Bash(cmd.exe /c tasklist /FI \"PID eq 4108\")"
     ]
   }
 }
