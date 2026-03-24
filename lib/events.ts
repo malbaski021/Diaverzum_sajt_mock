@@ -36,7 +36,7 @@ function readTextFile(folderPath: string): string {
   const files = fs.readdirSync(folderPath);
   const txtFile = files.find((f) => f.toLowerCase().endsWith(".txt"));
   if (!txtFile) return "";
-  return fs.readFileSync(path.join(folderPath, txtFile), "utf-8").trim();
+  return fs.readFileSync(path.join(folderPath, txtFile), "utf-8").replace(/\r\n/g, "\n").trim();
 }
 
 function getImages(slug: string): string[] {

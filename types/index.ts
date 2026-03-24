@@ -4,6 +4,8 @@ export interface ArticleMeta {
   excerpt: string;
   image?: string;
   noHero?: boolean;
+  heroLayout?: "top" | "float";
+  gallery?: string[];
   author: string;
   tags: string[];
   slug: string;

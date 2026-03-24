@@ -57,10 +57,10 @@ export default function DogadjajPage({ params }: Props) {
           </time>
         </div>
 
-        {/* Hero: image left + text right */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        {/* Hero: image floats left, text wraps around and expands below */}
+        <div className="mb-8 overflow-hidden">
           {heroImage && (
-            <div className="relative rounded-xl overflow-hidden aspect-[4/3] md:aspect-auto md:min-h-[360px]">
+            <div className="relative rounded-xl overflow-hidden aspect-[4/3] mb-4 md:float-left md:w-1/2 md:mr-8 md:mb-4">
               <Img
                 src={heroImage}
                 alt={`${event.title} — fotografija`}
@@ -70,14 +70,26 @@ export default function DogadjajPage({ params }: Props) {
               />
             </div>
           )}
-          <div className="flex flex-col justify-center">
-            <div className="prose max-w-none">
-              {paragraphs.map((para, i) => (
-                <p key={i} className="text-gray-700 leading-relaxed mb-4 last:mb-0">
-                  {para}
-                </p>
-              ))}
-            </div>
+          <div className="prose max-w-none">
+            {paragraphs.map((para, i) => (
+              <p key={i} className="text-gray-700 leading-relaxed mb-4 last:mb-0">
+                {para.split(/(@[\w.]+)/).map((part, j) =>
+                  part.startsWith("@") ? (
+                    <a
+                      key={j}
+                      href={`https://www.instagram.com/${part.slice(1)}/`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-brand-blue hover:underline"
+                    >
+                      {part}
+                    </a>
+                  ) : (
+                    part
+                  )
+                )}
+              </p>
+            ))}
           </div>
         </div>
 

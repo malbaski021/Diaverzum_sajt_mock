@@ -13,6 +13,40 @@ function findMdxInFolder(folderPath: string): string | null {
 }
 
 // Looks for image in public/ (legacy) or co-located in content folder, copies to public if needed
+function findGalleryImages(
+  section: "vesti" | "blog",
+  folderName: string,
+  slug: string
+): string[] {
+  const publicDir = path.join(process.cwd(), "public", "content", section, slug);
+  const contentDir = path.join(process.cwd(), "content", section, folderName);
+
+  // Ensure all co-located images are copied to public
+  if (folderName && fs.existsSync(contentDir)) {
+    fs.mkdirSync(publicDir, { recursive: true });
+    fs.readdirSync(contentDir)
+      .filter((f) => /\.(png|jpg|jpeg|webp)$/i.test(f))
+      .forEach((f) => {
+        const dest = path.join(publicDir, f);
+        if (!fs.existsSync(dest)) {
+          fs.copyFileSync(path.join(contentDir, f), dest);
+        }
+      });
+  }
+
+  if (!fs.existsSync(publicDir)) return [];
+
+  return fs.readdirSync(publicDir)
+    .filter((f) => /\.(png|jpg|jpeg|webp)$/i.test(f))
+    .sort((a, b) => {
+      const na = parseInt(a);
+      const nb = parseInt(b);
+      return isNaN(na) || isNaN(nb) ? a.localeCompare(b) : na - nb;
+    })
+    .slice(1) // sve osim prve (glavne) slike
+    .map((f) => `/content/${section}/${slug}/${f}`);
+}
+
 function findFolderImage(
   section: "vesti" | "blog",
   folderName: string,
@@ -78,6 +112,7 @@ export function getAllArticles(section: "vesti" | "blog"): ArticleMeta[] {
       const raw = fs.readFileSync(mdxPath, "utf-8");
       const { data } = matter(raw);
       const image = data.image || findFolderImage(section, folderName, slug) || null;
+      const gallery = findGalleryImages(section, folderName, slug);
 
       return {
         slug,
@@ -86,6 +121,8 @@ export function getAllArticles(section: "vesti" | "blog"): ArticleMeta[] {
         excerpt: data.excerpt ?? "",
         image,
         noHero: data.noHero ?? false,
+        heroLayout: data.heroLayout ?? undefined,
+        gallery,
         author: data.author ?? "",
         tags: data.tags ?? [],
       } as ArticleMeta;
@@ -132,6 +169,7 @@ export function getArticleBySlug(
   const raw = fs.readFileSync(mdxPath, "utf-8");
   const { data, content } = matter(raw);
   const image = data.image || findFolderImage(section, folderName, slug) || null;
+  const gallery = findGalleryImages(section, folderName, slug);
 
   return {
     meta: {
@@ -141,6 +179,8 @@ export function getArticleBySlug(
       excerpt: data.excerpt ?? "",
       image,
       noHero: data.noHero ?? false,
+      heroLayout: data.heroLayout ?? undefined,
+      gallery,
       author: data.author ?? "",
       tags: data.tags ?? [],
     },

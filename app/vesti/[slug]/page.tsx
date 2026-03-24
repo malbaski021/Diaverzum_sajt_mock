@@ -47,6 +47,8 @@ export default function VestiSlugPage({ params }: Props) {
           </ol>
         </nav>
 
+        <div className="max-w-3xl mx-auto">
+
         {/* Tags + title + meta */}
         <div className="mb-8">
           {meta.tags.length > 0 && (
@@ -112,6 +114,7 @@ export default function VestiSlugPage({ params }: Props) {
           </Link>
         </div>
 
+        </div>
       </div>
     </div>
   );

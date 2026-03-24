@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import path from "path";
+import fs from "fs";
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN!;
 const GITHUB_OWNER = process.env.GITHUB_OWNER!;
@@ -6,14 +8,15 @@ const GITHUB_REPO = process.env.GITHUB_REPO!;
 const GITHUB_BRANCH = process.env.GITHUB_BRANCH ?? "develop";
 
 const GITHUB_API = "https://api.github.com";
+const IS_LOCAL = process.env.NODE_ENV === "development";
 
-function encodePath(path: string): string {
-  return path.split("/").map(encodeURIComponent).join("/");
+function encodePath(p: string): string {
+  return p.split("/").map(encodeURIComponent).join("/");
 }
 
-async function getFileContent(path: string): Promise<{ content: string; sha: string } | null> {
+async function getFileContent(filePath: string): Promise<{ content: string; sha: string } | null> {
   const res = await fetch(
-    `${GITHUB_API}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${encodePath(path)}?ref=${GITHUB_BRANCH}`,
+    `${GITHUB_API}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${encodePath(filePath)}?ref=${GITHUB_BRANCH}`,
     { headers: { Authorization: `Bearer ${GITHUB_TOKEN}`, "X-GitHub-Api-Version": "2022-11-28" } }
   );
   if (!res.ok) return null;
@@ -21,17 +24,17 @@ async function getFileContent(path: string): Promise<{ content: string; sha: str
   return { content: data.content, sha: data.sha };
 }
 
-async function getFileSha(path: string): Promise<string | null> {
-  const file = await getFileContent(path);
+async function getFileSha(filePath: string): Promise<string | null> {
+  const file = await getFileContent(filePath);
   return file?.sha ?? null;
 }
 
-async function putFile(path: string, base64Content: string, message: string, sha?: string | null) {
+async function putFile(filePath: string, base64Content: string, message: string, sha?: string | null) {
   const body: Record<string, unknown> = { message, content: base64Content, branch: GITHUB_BRANCH };
   if (sha) body.sha = sha;
 
   const res = await fetch(
-    `${GITHUB_API}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${encodePath(path)}`,
+    `${GITHUB_API}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${encodePath(filePath)}`,
     {
       method: "PUT",
       headers: {
@@ -49,6 +52,28 @@ async function putFile(path: string, base64Content: string, message: string, sha
   return res.json();
 }
 
+// --- Lokalne (filesystem) operacije ---
+
+const ROOT = process.cwd();
+
+function localReadJson(relPath: string) {
+  const abs = path.join(ROOT, relPath);
+  return JSON.parse(fs.readFileSync(abs, "utf-8"));
+}
+
+function localWriteJson(relPath: string, data: unknown) {
+  const abs = path.join(ROOT, relPath);
+  fs.writeFileSync(abs, JSON.stringify(data, null, 2), "utf-8");
+}
+
+function localWriteImage(relPath: string, buffer: Buffer) {
+  const abs = path.join(ROOT, relPath);
+  fs.mkdirSync(path.dirname(abs), { recursive: true });
+  fs.writeFileSync(abs, buffer);
+}
+
+// --- Handler ---
+
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
@@ -60,9 +85,35 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Ime je obavezno." }, { status: 400 });
     }
 
-    // Učitaj JSON jednom na početku
-    const jsonPath = "content/clanovi/clanovi.json";
-    const jsonFile = await getFileContent(jsonPath);
+    const jsonRelPath = "content/clanovi/clanovi.json";
+
+    if (IS_LOCAL) {
+      // Lokalni mod — piši direktno na disk
+      const members = localReadJson(jsonRelPath) as { id?: number; name: string; role: string; image: string; bio: string }[];
+      const filtered = members.filter((m) => m.name.trim() !== "");
+      const newId = filtered.reduce((max, m) => Math.max(max, m.id ?? 0), 0) + 1;
+
+      let imagePath = "";
+
+      if (image && image.size > 0) {
+        const ext = image.name.split(".").pop()?.toLowerCase() ?? "jpg";
+        const filename = `${name} ${newId}.${ext}`;
+        const buffer = Buffer.from(await image.arrayBuffer());
+
+        localWriteImage(`public/content/clanovi/${filename}`, buffer);
+        localWriteImage(`content/clanovi/${filename}`, buffer);
+
+        imagePath = `/content/clanovi/${filename}`;
+      }
+
+      filtered.push({ id: newId, name, role: "", image: imagePath, bio });
+      localWriteJson(jsonRelPath, filtered);
+
+      return NextResponse.json({ success: true });
+    }
+
+    // Produkcijski mod — GitHub API
+    const jsonFile = await getFileContent(jsonRelPath);
     if (!jsonFile) {
       return NextResponse.json({ error: "Ne mogu da učitam clanovi.json." }, { status: 500 });
     }
@@ -74,7 +125,6 @@ export async function POST(req: NextRequest) {
 
     let imagePath = "";
 
-    // Upload slike
     if (image && image.size > 0) {
       const ext = image.name.split(".").pop()?.toLowerCase() ?? "jpg";
       const filename = `${name} ${newId}.${ext}`;
@@ -92,10 +142,9 @@ export async function POST(req: NextRequest) {
       imagePath = `/content/clanovi/${filename}`;
     }
 
-    // Ažuriraj JSON
     filtered.push({ id: newId, name, role: "", image: imagePath, bio });
     const updatedBase64 = Buffer.from(JSON.stringify(filtered, null, 2)).toString("base64");
-    await putFile(jsonPath, updatedBase64, `Admin: dodaj člana ${name} (ID: ${newId})`, jsonFile.sha);
+    await putFile(jsonRelPath, updatedBase64, `Admin: dodaj člana ${name} (ID: ${newId})`, jsonFile.sha);
 
     return NextResponse.json({ success: true });
   } catch (err) {

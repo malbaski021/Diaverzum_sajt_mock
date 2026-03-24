@@ -16,45 +16,94 @@ const today = new Date().toISOString().split("T")[0];
 export default function AdminPage() {
   const [section, setSection] = useState("");
   const [izvor, setIzvor] = useState("");
+  const [heroLayout, setHeroLayout] = useState<"top" | "float">("top");
   const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState("");
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{ ok: boolean; msg: string } | null>(null);
 
   const nameRef = useRef<HTMLInputElement>(null);
+  const titleRef = useRef<HTMLInputElement>(null);
+  const authorRef = useRef<HTMLInputElement>(null);
+  const dateRef = useRef<HTMLInputElement>(null);
   const bioRef = useRef<HTMLTextAreaElement>(null);
   const imageRef = useRef<HTMLInputElement>(null);
+  const galleryRef = useRef<HTMLInputElement>(null);
+
+  function resetForm() {
+    if (nameRef.current) nameRef.current.value = "";
+    if (titleRef.current) titleRef.current.value = "";
+    if (authorRef.current) authorRef.current.value = "";
+    if (dateRef.current) dateRef.current.value = today;
+    if (bioRef.current) bioRef.current.value = "";
+    if (imageRef.current) imageRef.current.value = "";
+    if (galleryRef.current) galleryRef.current.value = "";
+    setTags([]);
+    setHeroLayout("top");
+  }
 
   async function handleUpload() {
-    if (section !== "clanovi") return;
-
-    const name = nameRef.current?.value.trim() ?? "";
-    const bio = bioRef.current?.value.trim() ?? "";
-    const image = imageRef.current?.files?.[0] ?? null;
-
-    if (!name) {
-      setStatus({ ok: false, msg: "Ime i prezime su obavezni." });
-      return;
-    }
-
     setLoading(true);
     setStatus(null);
 
-    const formData = new FormData();
-    formData.append("name", name);
-    formData.append("bio", bio);
-    if (image) formData.append("image", image);
-
     try {
-      const res = await fetch("/api/admin/clanovi", { method: "POST", body: formData });
-      const data = await res.json();
-      if (res.ok) {
-        setStatus({ ok: true, msg: "Član uspešno dodat! Sajt će se ažurirati za koji minut." });
-        if (nameRef.current) nameRef.current.value = "";
-        if (bioRef.current) bioRef.current.value = "";
-        if (imageRef.current) imageRef.current.value = "";
-      } else {
-        setStatus({ ok: false, msg: data.error ?? "Greška pri uploadu." });
+      if (section === "clanovi") {
+        const name = nameRef.current?.value.trim() ?? "";
+        const bio = bioRef.current?.value.trim() ?? "";
+        const image = imageRef.current?.files?.[0] ?? null;
+
+        if (!name) {
+          setStatus({ ok: false, msg: "Ime i prezime su obavezni." });
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append("name", name);
+        formData.append("bio", bio);
+        if (image) formData.append("image", image);
+
+        const res = await fetch("/api/admin/clanovi", { method: "POST", body: formData });
+        const data = await res.json();
+
+        if (res.ok) {
+          setStatus({ ok: true, msg: "Član uspešno dodat! Sajt će se ažurirati za koji minut." });
+          resetForm();
+        } else {
+          setStatus({ ok: false, msg: data.error ?? "Greška pri uploadu." });
+        }
+
+      } else if (section === "blog") {
+        const title = titleRef.current?.value.trim() ?? "";
+        const author = authorRef.current?.value.trim() ?? "";
+        const date = dateRef.current?.value ?? today;
+        const text = bioRef.current?.value.trim() ?? "";
+        const mainImage = imageRef.current?.files?.[0] ?? null;
+        const galleryFiles = galleryRef.current?.files ? Array.from(galleryRef.current.files) : [];
+
+        if (!title) {
+          setStatus({ ok: false, msg: "Naslov je obavezan." });
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append("title", title);
+        formData.append("author", author);
+        formData.append("date", date);
+        formData.append("text", text);
+        formData.append("heroLayout", heroLayout);
+        formData.append("tags", JSON.stringify(tags));
+        if (mainImage) formData.append("mainImage", mainImage);
+        galleryFiles.forEach((f) => formData.append("gallery", f));
+
+        const res = await fetch("/api/admin/blog", { method: "POST", body: formData });
+        const data = await res.json();
+
+        if (res.ok) {
+          setStatus({ ok: true, msg: "Blog post uspešno dodat! Sajt će se ažurirati za koji minut." });
+          resetForm();
+        } else {
+          setStatus({ ok: false, msg: data.error ?? "Greška pri uploadu." });
+        }
       }
     } catch {
       setStatus({ ok: false, msg: "Greška pri uploadu." });
@@ -78,7 +127,6 @@ export default function AdminPage() {
   };
 
   const hasTitle = section === "blog" || section === "vesti" || section === "juniori";
-  const hasOrientation = section === "blog" || section === "vesti" || section === "juniori";
   const hasDate = section === "blog" || section === "vesti" || section === "juniori";
   const hasTags = section === "blog" || section === "vesti" || section === "juniori";
 
@@ -91,7 +139,7 @@ export default function AdminPage() {
         <label className="block text-sm font-medium text-gray-700 mb-2">Sekcija</label>
         <select
           value={section}
-          onChange={(e) => { setSection(e.target.value); setTags([]); setIzvor(""); }}
+          onChange={(e) => { setSection(e.target.value); setTags([]); setIzvor(""); setHeroLayout("top"); }}
           className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-blue mb-6"
         >
           <option value="" disabled>Izaberi sekciju...</option>
@@ -122,6 +170,7 @@ export default function AdminPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Naslov</label>
                 <input
+                  ref={titleRef}
                   type="text"
                   placeholder="Naslov..."
                   className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-blue"
@@ -129,9 +178,11 @@ export default function AdminPage() {
               </div>
             )}
 
-            {/* Slika */}
+            {/* Glavna slika */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Slika</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {section === "blog" ? "Glavna slika" : "Slika"}
+              </label>
               <input
                 ref={imageRef}
                 type="file"
@@ -140,15 +191,32 @@ export default function AdminPage() {
               />
             </div>
 
-            {/* Orijentacija slike */}
-            {hasOrientation && (
+            {/* Layout slike — samo Blog */}
+            {section === "blog" && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Orijentacija slike</label>
-                <select className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-blue">
-                  <option value="" disabled>Izaberi orijentaciju...</option>
-                  <option value="portrait">Portret</option>
-                  <option value="landscape">Landscape</option>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Layout slike</label>
+                <select
+                  value={heroLayout}
+                  onChange={(e) => setHeroLayout(e.target.value as "top" | "float")}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-blue"
+                >
+                  <option value="top">Landscape — slika gore, tekst ispod</option>
+                  <option value="float">Portret — slika levo, tekst teče oko nje</option>
                 </select>
+              </div>
+            )}
+
+            {/* Galerija — samo Blog */}
+            {section === "blog" && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Galerija (opciono)</label>
+                <input
+                  ref={galleryRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-700 file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-brand-blue-light file:text-brand-blue cursor-pointer"
+                />
               </div>
             )}
 
@@ -193,6 +261,7 @@ export default function AdminPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Autor</label>
                 <input
+                  ref={authorRef}
                   type="text"
                   placeholder="Ime i prezime autora..."
                   className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-blue"
@@ -205,6 +274,7 @@ export default function AdminPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Datum objave</label>
                 <input
+                  ref={dateRef}
                   type="date"
                   defaultValue={today}
                   className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-blue"

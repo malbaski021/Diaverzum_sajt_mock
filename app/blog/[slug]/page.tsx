@@ -60,14 +60,27 @@ export default function BlogSlugPage({ params }: Props) {
               {format(new Date(meta.date), "d. MMMM yyyy.", { locale: srLatn })}
             </time>
           </div>
-          {meta.image && !meta.noHero && (
-            <div className="relative h-64 md:h-96 rounded-xl overflow-hidden mb-8">
-              <Img src={meta.image} alt={meta.title} fill className="object-cover" priority />
+          {meta.image && !meta.noHero && meta.heroLayout === "float" ? (
+            <div className="mb-8 overflow-hidden">
+              <div className="mb-4 md:float-left md:w-1/2 md:mr-8 md:mb-4">
+                <Img src={meta.image} alt={meta.title} width={800} height={1200} className="w-full h-auto rounded-xl" priority />
+              </div>
+              <div className="prose max-w-none">
+                <MDXRemote source={content} />
+              </div>
             </div>
+          ) : (
+            <>
+              {meta.image && !meta.noHero && (
+                <div className="relative h-64 md:h-96 rounded-xl overflow-hidden mb-8">
+                  <Img src={meta.image} alt={meta.title} fill className="object-cover" priority />
+                </div>
+              )}
+              <div className="prose max-w-none w-full overflow-hidden">
+                <MDXRemote source={content} />
+              </div>
+            </>
           )}
-          <div className="prose max-w-none">
-            <MDXRemote source={content} />
-          </div>
           <div className="mt-12 pt-8 border-t border-brand-gray-mid">
             <Link href="/blog" className="inline-flex items-center gap-2 text-brand-blue font-medium hover:underline">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
