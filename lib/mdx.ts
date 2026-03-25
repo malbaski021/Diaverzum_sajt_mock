@@ -114,6 +114,8 @@ export function getAllArticles(section: "vesti" | "blog"): ArticleMeta[] {
       const image = data.image || findFolderImage(section, folderName, slug) || null;
       const gallery = findGalleryImages(section, folderName, slug);
 
+      if (section === "blog" && data.arhivirano === true) return null;
+
       return {
         slug,
         title: data.title ?? "",
@@ -125,6 +127,7 @@ export function getAllArticles(section: "vesti" | "blog"): ArticleMeta[] {
         gallery,
         author: data.author ?? "",
         tags: data.tags ?? [],
+        arhivirano: data.arhivirano ?? false,
       } as ArticleMeta;
     })
     .filter(Boolean) as ArticleMeta[];
@@ -183,6 +186,7 @@ export function getArticleBySlug(
       gallery,
       author: data.author ?? "",
       tags: data.tags ?? [],
+      arhivirano: data.arhivirano ?? false,
     },
     content,
   };

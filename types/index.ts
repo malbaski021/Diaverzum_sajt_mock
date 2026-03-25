@@ -9,6 +9,7 @@ export interface ArticleMeta {
   author: string;
   tags: string[];
   slug: string;
+  arhivirano?: boolean;
 }
 
 export interface Article extends ArticleMeta {
