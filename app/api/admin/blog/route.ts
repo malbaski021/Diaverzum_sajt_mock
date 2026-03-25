@@ -47,6 +47,8 @@ function buildMdx(
   return lines.join("\n");
 }
 
+function enc(p: string): string { return p.split("/").map(encodeURIComponent).join("/"); }
+
 // --- GitHub helpers ---
 
 async function getFileSha(filePath: string): Promise<string | null> {
@@ -111,7 +113,6 @@ function parseFrontmatter(content: string): Record<string, string> {
 // --- GitHub list helper ---
 
 async function listGitHubBlogs() {
-  function enc(p: string) { return p.split("/").map(encodeURIComponent).join("/"); }
   const headers = {
     Authorization: `Bearer ${GITHUB_TOKEN}`,
     "X-GitHub-Api-Version": "2022-11-28",
@@ -183,7 +184,6 @@ export async function GET(req: NextRequest) {
       }
 
       // GitHub
-      function enc(p: string) { return p.split("/").map(encodeURIComponent).join("/"); }
       const headers = { Authorization: `Bearer ${GITHUB_TOKEN}`, "X-GitHub-Api-Version": "2022-11-28" };
       const res = await fetch(`${GITHUB_API}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${enc(mdxRelPath)}?ref=${GITHUB_BRANCH}`, { headers });
       if (!res.ok) return NextResponse.json({ error: "Ne postoji." }, { status: 404 });
@@ -275,7 +275,6 @@ export async function DELETE(req: NextRequest) {
     }
 
     // GitHub — obriši sve fajlove u content/blog/{folder} i public/content/blog/{slug}
-    function enc(p: string) { return p.split("/").map(encodeURIComponent).join("/"); }
     const headers = { Authorization: `Bearer ${GITHUB_TOKEN}`, "X-GitHub-Api-Version": "2022-11-28" };
 
     async function deleteGitHubFolder(folderPath: string) {
