@@ -193,7 +193,7 @@ export default function AdminPage() {
   const [modalLoading,   setModalLoading]   = useState(false);
 
   // Form state
-  const [izvor, setIzvor]               = useState("");
+  const [, setIzvor]               = useState("");
   const [heroLayout, setHeroLayout]     = useState<"top" | "float" | "">("");
   const [tags, setTags]                 = useState<string[]>([]);
   const [newTag, setNewTag]             = useState("");
