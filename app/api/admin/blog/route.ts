@@ -258,6 +258,26 @@ export async function PUT(req: NextRequest) {
   }
 }
 
+async function deleteGitHubFolder(folderPath: string, folderLabel: string) {
+  const ghHeaders = { Authorization: `Bearer ${GITHUB_TOKEN}`, "X-GitHub-Api-Version": "2022-11-28" };
+  const res = await fetch(
+    `${GITHUB_API}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${enc(folderPath)}?ref=${GITHUB_BRANCH}`,
+    { headers: ghHeaders }
+  );
+  if (!res.ok) return;
+  const files: { name: string; path: string; sha: string; type: string }[] = await res.json();
+  for (const file of files.filter((f) => f.type === "file")) {
+    await fetch(
+      `${GITHUB_API}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${enc(file.path)}`,
+      {
+        method: "DELETE",
+        headers: { ...ghHeaders, "Content-Type": "application/json" },
+        body: JSON.stringify({ message: `Admin: obriši blog "${folderLabel}"`, sha: file.sha, branch: GITHUB_BRANCH }),
+      }
+    );
+  }
+}
+
 export async function DELETE(req: NextRequest) {
   try {
     const { folder, slug } = await req.json();
@@ -274,30 +294,8 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
-    // GitHub — obriši sve fajlove u content/blog/{folder} i public/content/blog/{slug}
-    const headers = { Authorization: `Bearer ${GITHUB_TOKEN}`, "X-GitHub-Api-Version": "2022-11-28" };
-
-    async function deleteGitHubFolder(folderPath: string) {
-      const res = await fetch(
-        `${GITHUB_API}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${enc(folderPath)}?ref=${GITHUB_BRANCH}`,
-        { headers }
-      );
-      if (!res.ok) return;
-      const files: { name: string; path: string; sha: string; type: string }[] = await res.json();
-      for (const file of files.filter((f) => f.type === "file")) {
-        await fetch(
-          `${GITHUB_API}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${enc(file.path)}`,
-          {
-            method: "DELETE",
-            headers: { ...headers, "Content-Type": "application/json" },
-            body: JSON.stringify({ message: `Admin: obriši blog "${folder}"`, sha: file.sha, branch: GITHUB_BRANCH }),
-          }
-        );
-      }
-    }
-
-    await deleteGitHubFolder(contentFolder);
-    await deleteGitHubFolder(publicFolder);
+    await deleteGitHubFolder(contentFolder, folder);
+    await deleteGitHubFolder(publicFolder, folder);
 
     return NextResponse.json({ success: true });
   } catch (err) {
