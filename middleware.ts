@@ -32,7 +32,9 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  if (!checkAuth(req, "11111", "99999", "Diaverzum Stage")) {
+  const stageUser = process.env.STAGE_USER ?? "11111";
+  const stagePass = process.env.STAGE_PASS ?? "99999";
+  if (!checkAuth(req, stageUser, stagePass, "Diaverzum Stage")) {
     return new NextResponse("Unauthorized", {
       status: 401,
       headers: { "WWW-Authenticate": 'Basic realm="Diaverzum Stage"' },
