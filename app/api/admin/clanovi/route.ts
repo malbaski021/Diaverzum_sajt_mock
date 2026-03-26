@@ -171,7 +171,7 @@ export async function POST(req: NextRequest) {
         imagePath = `/content/clanovi/${filename}`;
       }
 
-      filtered.push({ id: newId, name, role: "", image: imagePath, bio });
+      filtered.push({ id: newId, name, role: "", image: imagePath, bio, arhivirano: false });
       localWriteJson(jsonRelPath, filtered);
 
       return NextResponse.json({ success: true });
@@ -207,7 +207,7 @@ export async function POST(req: NextRequest) {
       imagePath = `/content/clanovi/${filename}`;
     }
 
-    filtered.push({ id: newId, name, role: "", image: imagePath, bio });
+    filtered.push({ id: newId, name, role: "", image: imagePath, bio, arhivirano: false });
     const updatedBase64 = Buffer.from(JSON.stringify(filtered, null, 2)).toString("base64");
     await putFile(jsonRelPath, updatedBase64, `Admin: dodaj člana ${name} (ID: ${newId})`, jsonFile.sha);
 

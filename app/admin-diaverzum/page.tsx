@@ -514,8 +514,8 @@ export default function AdminPage() {
           fd.append("name", item.name);
           fd.append("bio", item.bio ?? "");
           fd.append("arhivirano", String(arhivirano));
-          await fetch("/api/admin/clanovi", { method: "PUT", body: fd });
-          setDeleteClanItems((prev) => prev.map((c) => c.id === item.id ? { ...c, arhivirano } : c));
+          const res = await fetch("/api/admin/clanovi", { method: "PUT", body: fd });
+          if (res.ok) setDeleteClanItems((prev) => prev.map((c) => c.id === item.id ? { ...c, arhivirano } : c));
         }
       }
     } catch {
