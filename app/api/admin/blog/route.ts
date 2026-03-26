@@ -30,6 +30,7 @@ function buildMdx(
   author: string,
   tags: string[],
   heroLayout: string,
+  arhivirano: boolean = false,
 ): string {
   const lines = [
     `---`,
@@ -39,11 +40,14 @@ function buildMdx(
     `author: "${author.replace(/"/g, '\\"')}"`,
     `tags: ${JSON.stringify(tags)}`,
     `heroLayout: "${heroLayout}"`,
+    `arhivirano: ${arhivirano}`,
     `---`,
     ``,
   ];
   return lines.join("\n");
 }
+
+function enc(p: string): string { return p.split("/").map(encodeURIComponent).join("/"); }
 
 // --- GitHub helpers ---
 
@@ -90,7 +94,215 @@ function localWriteText(relPath: string, content: string) {
   localWrite(relPath, Buffer.from(content, "utf-8"));
 }
 
+// --- Frontmatter parser ---
+
+function parseFrontmatter(content: string): Record<string, string> {
+  const match = content.match(/^---\n([\s\S]*?)\n---/);
+  if (!match) return {};
+  const fm: Record<string, string> = {};
+  for (const line of match[1].split("\n")) {
+    const idx = line.indexOf(": ");
+    if (idx === -1) continue;
+    const key = line.slice(0, idx).trim();
+    const val = line.slice(idx + 2).replace(/^"|"$/g, "").trim();
+    fm[key] = val;
+  }
+  return fm;
+}
+
+// --- GitHub list helper ---
+
+async function listGitHubBlogs() {
+  const headers = {
+    Authorization: `Bearer ${GITHUB_TOKEN}`,
+    "X-GitHub-Api-Version": "2022-11-28",
+  };
+
+  const rootRes = await fetch(
+    `${GITHUB_API}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/content/blog?ref=${GITHUB_BRANCH}`,
+    { headers }
+  );
+  if (!rootRes.ok) return [];
+  const entries: { name: string; type: string }[] = await rootRes.json();
+
+  const items: { folder: string; slug: string; title: string; date: string; author: string; excerpt: string; arhivirano: boolean }[] = [];
+
+  for (const entry of entries.filter((e) => e.type === "dir")) {
+    const folderRes = await fetch(
+      `${GITHUB_API}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${enc(`content/blog/${entry.name}`)}?ref=${GITHUB_BRANCH}`,
+      { headers }
+    );
+    if (!folderRes.ok) continue;
+    const files: { name: string; download_url: string }[] = await folderRes.json();
+    const mdxFile = files.find((f) => f.name.endsWith(".mdx"));
+    if (!mdxFile) continue;
+
+    const mdxRes = await fetch(mdxFile.download_url);
+    if (!mdxRes.ok) continue;
+    const content = await mdxRes.text();
+    const fm = parseFrontmatter(content);
+
+    items.push({
+      folder: entry.name,
+      slug: mdxFile.name.replace(".mdx", ""),
+      title: fm.title ?? entry.name,
+      date: fm.date ?? "",
+      author: fm.author ?? "",
+      excerpt: fm.excerpt ?? "",
+      arhivirano: fm.arhivirano === "true",
+    });
+  }
+
+  return items.sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
+}
+
 // --- Handler ---
+
+function extractBody(content: string): string {
+  const match = content.match(/^---\n[\s\S]*?\n---\n?([\s\S]*)$/);
+  return match ? match[1].trim() : content;
+}
+
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const folder = searchParams.get("folder");
+    const slug   = searchParams.get("slug");
+
+    // --- Jedan blog (za edit) ---
+    if (folder && slug) {
+      const mdxRelPath = `content/blog/${folder}/${slug}.mdx`;
+
+      if (IS_LOCAL) {
+        const abs = path.join(ROOT, mdxRelPath);
+        if (!fs.existsSync(abs)) return NextResponse.json({ error: "Ne postoji." }, { status: 404 });
+        const raw = fs.readFileSync(abs, "utf-8");
+        const fm  = parseFrontmatter(raw);
+        const body = extractBody(raw);
+        const tags = fm.tags ? JSON.parse(fm.tags.replace(/'/g, '"')) : [];
+        return NextResponse.json({ folder, slug, title: fm.title ?? "", date: fm.date ?? "", author: fm.author ?? "", heroLayout: fm.heroLayout ?? "top", tags, arhivirano: fm.arhivirano === "true", text: body });
+      }
+
+      // GitHub
+      const headers = { Authorization: `Bearer ${GITHUB_TOKEN}`, "X-GitHub-Api-Version": "2022-11-28" };
+      const res = await fetch(`${GITHUB_API}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${enc(mdxRelPath)}?ref=${GITHUB_BRANCH}`, { headers });
+      if (!res.ok) return NextResponse.json({ error: "Ne postoji." }, { status: 404 });
+      const fileData = await res.json();
+      const raw = Buffer.from(fileData.content.replace(/\n/g, ""), "base64").toString("utf-8");
+      const fm  = parseFrontmatter(raw);
+      const body = extractBody(raw);
+      const tags = fm.tags ? JSON.parse(fm.tags.replace(/'/g, '"')) : [];
+      return NextResponse.json({ folder, slug, sha: fileData.sha, title: fm.title ?? "", date: fm.date ?? "", author: fm.author ?? "", heroLayout: fm.heroLayout ?? "top", tags, arhivirano: fm.arhivirano === "true", text: body });
+    }
+
+    // --- Lista svih blogova ---
+    if (IS_LOCAL) {
+      const blogDir = path.join(ROOT, "content/blog");
+      if (!fs.existsSync(blogDir)) return NextResponse.json({ items: [] });
+
+      const items: { folder: string; slug: string; title: string; date: string; author: string; excerpt: string; arhivirano: boolean }[] = [];
+
+      for (const entry of fs.readdirSync(blogDir, { withFileTypes: true })) {
+        if (!entry.isDirectory()) continue;
+        const folderPath = path.join(blogDir, entry.name);
+        const mdxFile = fs.readdirSync(folderPath).find((f) => f.endsWith(".mdx"));
+        if (!mdxFile) continue;
+
+        const content = fs.readFileSync(path.join(folderPath, mdxFile), "utf-8");
+        const fm = parseFrontmatter(content);
+
+        items.push({
+          folder: entry.name,
+          slug: mdxFile.replace(".mdx", ""),
+          title: fm.title ?? entry.name,
+          date: fm.date ?? "",
+          author: fm.author ?? "",
+          excerpt: fm.excerpt ?? "",
+          arhivirano: fm.arhivirano === "true",
+        });
+      }
+
+      items.sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
+      return NextResponse.json({ items });
+    }
+
+    const items = await listGitHubBlogs();
+    return NextResponse.json({ items });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ error: "Greška pri učitavanju." }, { status: 500 });
+  }
+}
+
+export async function PUT(req: NextRequest) {
+  try {
+    const { folder, slug, title, author, date, text, heroLayout, tags, sha, arhivirano } = await req.json();
+    if (!folder || !slug || !title) return NextResponse.json({ error: "folder, slug i title su obavezni." }, { status: 400 });
+
+    const excerpt    = (text ?? "").slice(0, 160).replace(/\n/g, " ").trim();
+    const mdxContent = buildMdx(title, date ?? "", excerpt, author ?? "", tags ?? [], heroLayout ?? "top", arhivirano ?? false) + (text ?? "");
+    const mdxRelPath = `content/blog/${folder}/${slug}.mdx`;
+
+    if (IS_LOCAL) {
+      fs.writeFileSync(path.join(ROOT, mdxRelPath), mdxContent, "utf-8");
+      return NextResponse.json({ success: true });
+    }
+
+    // GitHub — potreban SHA za update
+    const fileSha = sha ?? (await getFileSha(mdxRelPath));
+    await putFile(mdxRelPath, Buffer.from(mdxContent).toString("base64"), `Admin: izmeni blog "${title}"`, fileSha);
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ error: "Greška pri čuvanju." }, { status: 500 });
+  }
+}
+
+async function deleteGitHubFolder(folderPath: string, folderLabel: string) {
+  const ghHeaders = { Authorization: `Bearer ${GITHUB_TOKEN}`, "X-GitHub-Api-Version": "2022-11-28" };
+  const res = await fetch(
+    `${GITHUB_API}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${enc(folderPath)}?ref=${GITHUB_BRANCH}`,
+    { headers: ghHeaders }
+  );
+  if (!res.ok) return;
+  const files: { name: string; path: string; sha: string; type: string }[] = await res.json();
+  for (const file of files.filter((f) => f.type === "file")) {
+    await fetch(
+      `${GITHUB_API}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${enc(file.path)}`,
+      {
+        method: "DELETE",
+        headers: { ...ghHeaders, "Content-Type": "application/json" },
+        body: JSON.stringify({ message: `Admin: obriši blog "${folderLabel}"`, sha: file.sha, branch: GITHUB_BRANCH }),
+      }
+    );
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const { folder, slug } = await req.json();
+    if (!folder || !slug) return NextResponse.json({ error: "folder i slug su obavezni." }, { status: 400 });
+
+    const contentFolder = `content/blog/${folder}`;
+    const publicFolder  = `public/content/blog/${slug}`;
+
+    if (IS_LOCAL) {
+      const contentAbs = path.join(ROOT, contentFolder);
+      const publicAbs  = path.join(ROOT, publicFolder);
+      if (fs.existsSync(contentAbs)) fs.rmSync(contentAbs, { recursive: true, force: true });
+      if (fs.existsSync(publicAbs))  fs.rmSync(publicAbs,  { recursive: true, force: true });
+      return NextResponse.json({ success: true });
+    }
+
+    await deleteGitHubFolder(contentFolder, folder);
+    await deleteGitHubFolder(publicFolder, folder);
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ error: "Greška pri brisanju." }, { status: 500 });
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {

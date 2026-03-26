@@ -27,6 +27,40 @@ export default function BlogSlugPage({ params }: Props) {
 
   const { meta, content } = data;
 
+  if (meta.arhivirano === true) {
+    return (
+      <div className="section-padding">
+        <div className="container-max">
+          <nav aria-label="Putanja" className="mb-8">
+            <ol className="flex items-center gap-2 text-sm text-gray-500">
+              <li><Link href="/" className="hover:text-brand-blue">Početna</Link></li>
+              <li aria-hidden="true">/</li>
+              <li><Link href="/blog" className="hover:text-brand-blue">Blog</Link></li>
+              <li aria-hidden="true">/</li>
+              <li className="text-gray-900 font-medium" aria-current="page">Nedostupan</li>
+            </ol>
+          </nav>
+          <div className="max-w-3xl mx-auto text-center py-16">
+            <div className="w-16 h-16 rounded-2xl bg-gray-100 text-gray-300 flex items-center justify-center mx-auto mb-6">
+              <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                <line x1="23" y1="11" x2="17" y2="17"/><line x1="17" y1="11" x2="23" y2="17"/>
+              </svg>
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-3">Blog je trenutno nedostupan</h1>
+            <p className="text-gray-500 mb-8">Ovaj sadržaj je privremeno uklonjen sa sajta.</p>
+            <Link href="/blog" className="inline-flex items-center gap-2 text-brand-blue font-medium hover:underline">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+              Nazad na blog
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="section-padding">
       <div className="container-max">
