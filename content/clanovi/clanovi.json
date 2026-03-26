@@ -97,5 +97,12 @@
     "image": "/content/clanovi/Petar petrovic 14.jpg",
     "bio": "1000 1000 1000 1000",
     "arhivirano": false
+  },
+  {
+    "id": 15,
+    "name": "marko markovic",
+    "role": "",
+    "image": "/content/clanovi/marko markovic 15.jpg",
+    "bio": "debilko"
   }
 ]
