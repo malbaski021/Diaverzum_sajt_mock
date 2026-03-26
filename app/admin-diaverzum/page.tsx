@@ -1232,9 +1232,6 @@ export default function AdminPage() {
                         <p className="text-xs text-gray-500 leading-relaxed">
                           Ako izaberete novu fotografiju, prethodna će biti automatski zamenjena.
                         </p>
-                        <p className="text-xs text-gray-400 leading-relaxed">
-                          Nova fotografija preuzima identičan naziv prethodne.
-                        </p>
                       </div>
                     </div>
                   </div>
