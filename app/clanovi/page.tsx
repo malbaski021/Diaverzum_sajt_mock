@@ -4,6 +4,8 @@ import MemberImage from "@/components/MemberImage";
 import fs from "fs";
 import path from "path";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Članovi",
   description: "Upoznajte članove udruženja Diaverzum Novi Sad.",
@@ -11,19 +13,58 @@ export const metadata: Metadata = {
 
 const DEFAULT_IMAGE = "/content/clanovi/default.jpg";
 
-function getMembers() {
-  const filePath = path.join(process.cwd(), "content", "clanovi", "clanovi.json");
-  const raw = fs.readFileSync(filePath, "utf-8");
-  const members = JSON.parse(raw) as { name: string; role: string; image: string; bio: string; arhivirano?: boolean }[];
-  return members.map((m) => {
-    const publicPath = path.join(process.cwd(), "public", m.image);
-    const imageExists = m.image && fs.existsSync(publicPath);
-    return { ...m, image: imageExists ? m.image : DEFAULT_IMAGE };
-  });
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+const GITHUB_OWNER = process.env.GITHUB_OWNER;
+const GITHUB_REPO = process.env.GITHUB_REPO;
+const GITHUB_BRANCH = process.env.GITHUB_BRANCH ?? "develop";
+const GITHUB_API = "https://api.github.com";
+const IS_LOCAL = process.env.NODE_ENV === "development";
+
+interface ClanMember {
+  name: string;
+  role: string;
+  image: string;
+  bio: string;
+  arhivirano?: boolean;
 }
 
-export default function ClanoviPage() {
-  const members = getMembers().filter((m) => m.name.trim() !== "" && !m.arhivirano);
+async function getMembers(): Promise<ClanMember[]> {
+  const jsonRelPath = "content/clanovi/clanovi.json";
+
+  if (IS_LOCAL) {
+    const filePath = path.join(process.cwd(), jsonRelPath);
+    const raw = fs.readFileSync(filePath, "utf-8");
+    const members = JSON.parse(raw) as ClanMember[];
+    return members.map((m) => {
+      const publicPath = path.join(process.cwd(), "public", m.image);
+      const imageExists = m.image && fs.existsSync(publicPath);
+      return { ...m, image: imageExists ? m.image : DEFAULT_IMAGE };
+    });
+  }
+
+  // Production: fetch from GitHub API for always-fresh data
+  const encodePath = (p: string) => p.split("/").map(encodeURIComponent).join("/");
+  const res = await fetch(
+    `${GITHUB_API}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${encodePath(jsonRelPath)}?ref=${GITHUB_BRANCH}`,
+    {
+      headers: {
+        Authorization: `Bearer ${GITHUB_TOKEN}`,
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+      cache: "no-store",
+    }
+  );
+
+  if (!res.ok) return [];
+
+  const data = await res.json();
+  const decoded = Buffer.from(data.content.replace(/\n/g, ""), "base64").toString("utf-8");
+  const members = JSON.parse(decoded) as ClanMember[];
+  return members.map((m) => ({ ...m, image: m.image || DEFAULT_IMAGE }));
+}
+
+export default async function ClanoviPage() {
+  const members = (await getMembers()).filter((m) => m.name.trim() !== "" && !m.arhivirano);
 
   return (
     <div className="section-padding">
