@@ -163,6 +163,23 @@ interface BlogEditData {
   text: string;
 }
 
+interface ClanMember {
+  id: number;
+  name: string;
+  role: string;
+  image: string;
+  bio: string;
+  arhivirano?: boolean;
+}
+
+interface ClanEditData {
+  id: number;
+  name: string;
+  bio: string;
+  image: string;
+  arhivirano: boolean;
+}
+
 // --- Komponenta ---
 
 export default function AdminPage() {
@@ -184,13 +201,35 @@ export default function AdminPage() {
   const [editStatus,  setEditStatus]  = useState<{ ok: boolean; msg: string } | null>(null);
   const [editNewTag,  setEditNewTag]  = useState("");
 
-  // Delete view
+  // Delete view (blog)
   const [deleteSearch,   setDeleteSearch]   = useState("");
   const [deleteItems,    setDeleteItems]    = useState<BlogItem[]>([]);
   const [deleteLoading,  setDeleteLoading]  = useState(false);
   const [deleteError,    setDeleteError]    = useState(false);
-  const [modal,          setModal]          = useState<{ type: "arhiviraj" | "vrati" | "obrisi"; item: BlogItem } | null>(null);
+  const [modal, setModal] = useState<
+    | { type: "arhiviraj" | "vrati" | "obrisi"; kind: "blog"; item: BlogItem }
+    | { type: "arhiviraj" | "vrati" | "obrisi"; kind: "clan"; item: ClanMember }
+    | null
+  >(null);
   const [modalLoading,   setModalLoading]   = useState(false);
+
+  // Clanovi — lista
+  const [clanItems,    setClanItems]    = useState<ClanMember[]>([]);
+  const [clanLoading,  setClanLoading]  = useState(false);
+  const [clanError,    setClanError]    = useState(false);
+  const [clanSearch,   setClanSearch]   = useState("");
+
+  // Clanovi — edit
+  const [clanEditData,    setClanEditData]    = useState<ClanEditData | null>(null);
+  const [clanEditLoading, setClanEditLoading] = useState(false);
+  const [clanEditSaving,  setClanEditSaving]  = useState(false);
+  const [clanEditStatus,  setClanEditStatus]  = useState<{ ok: boolean; msg: string } | null>(null);
+
+  // Clanovi — delete
+  const [deleteClanItems,   setDeleteClanItems]   = useState<ClanMember[]>([]);
+  const [deleteClanLoading, setDeleteClanLoading] = useState(false);
+  const [deleteClanError,   setDeleteClanError]   = useState(false);
+  const [deleteClanSearch,  setDeleteClanSearch]  = useState("");
 
   // Form state
   const [, setIzvor]               = useState("");
@@ -208,15 +247,24 @@ export default function AdminPage() {
 
   const blogCanSave = titleVal.trim() !== "" && textVal.trim() !== "" && dateVal !== "" && hasImage && heroLayout !== "";
 
+  // Validacija obaveznih polja (clanovi)
+  const [clanNameVal,  setClanNameVal]  = useState("");
+  const [clanBioVal,   setClanBioVal]   = useState("");
+  const [clanHasImage, setClanHasImage] = useState(false);
+
+  const CLAN_BIO_MAX = 500;
+  const clanCanSave = clanNameVal.trim() !== "" && clanBioVal.trim() !== "" && clanHasImage && clanBioVal.length <= CLAN_BIO_MAX;
+
   // Refs
-  const nameRef    = useRef<HTMLInputElement>(null);
-  const titleRef   = useRef<HTMLInputElement>(null);
-  const authorRef  = useRef<HTMLInputElement>(null);
-  const dateRef    = useRef<HTMLInputElement>(null);
-  const bioRef     = useRef<HTMLTextAreaElement>(null);
-  const imageRef   = useRef<HTMLInputElement>(null);
-  const galleryRef = useRef<HTMLInputElement>(null);
-  const izvorRef   = useRef<HTMLInputElement>(null);
+  const nameRef         = useRef<HTMLInputElement>(null);
+  const titleRef        = useRef<HTMLInputElement>(null);
+  const authorRef       = useRef<HTMLInputElement>(null);
+  const dateRef         = useRef<HTMLInputElement>(null);
+  const bioRef          = useRef<HTMLTextAreaElement>(null);
+  const imageRef        = useRef<HTMLInputElement>(null);
+  const galleryRef      = useRef<HTMLInputElement>(null);
+  const izvorRef        = useRef<HTMLInputElement>(null);
+  const clanEditImageRef = useRef<HTMLInputElement>(null);
 
   async function openEdit(item: BlogItem) {
     setEditLoading(true);
@@ -249,6 +297,49 @@ export default function AdminPage() {
     }
   }
 
+  async function openClanEdit(item: ClanMember) {
+    setClanEditLoading(true);
+    setClanEditStatus(null);
+    setView("edit");
+    try {
+      const res  = await fetch(`/api/admin/clanovi?id=${item.id}`);
+      const data = await res.json() as ClanMember;
+      setClanEditData({ id: data.id, name: data.name, bio: data.bio ?? "", image: data.image ?? "", arhivirano: data.arhivirano ?? false });
+    } catch {
+      setClanEditStatus({ ok: false, msg: "Greška pri učitavanju člana." });
+    } finally {
+      setClanEditLoading(false);
+    }
+  }
+
+  async function handleClanEditSave() {
+    if (!clanEditData) return;
+    setClanEditSaving(true);
+    setClanEditStatus(null);
+    try {
+      const fd = new FormData();
+      fd.append("id", String(clanEditData.id));
+      fd.append("name", clanEditData.name);
+      fd.append("bio", clanEditData.bio);
+      fd.append("arhivirano", String(clanEditData.arhivirano));
+      const newImage = clanEditImageRef.current?.files?.[0];
+      if (newImage) fd.append("image", newImage);
+
+      const res  = await fetch("/api/admin/clanovi", { method: "PUT", body: fd });
+      const data = await res.json();
+      if (res.ok) {
+        setClanEditStatus({ ok: true, msg: "Član uspešno sačuvan!" });
+        if (clanEditImageRef.current) clanEditImageRef.current.value = "";
+      } else {
+        setClanEditStatus({ ok: false, msg: data.error ?? "Greška pri čuvanju." });
+      }
+    } catch {
+      setClanEditStatus({ ok: false, msg: "Greška pri čuvanju." });
+    } finally {
+      setClanEditSaving(false);
+    }
+  }
+
   function navigate(section: Section | null, v: View = "overview") {
     setActiveSection(section);
     setView(section === null ? "dashboard" : v);
@@ -270,6 +361,9 @@ export default function AdminPage() {
     setTextVal("");
     setDateVal(today);
     setHasImage(false);
+    setClanNameVal("");
+    setClanBioVal("");
+    setClanHasImage(false);
   }
 
   async function handleUpload() {
@@ -357,35 +451,72 @@ export default function AdminPage() {
         .catch(() => setDeleteError(true))
         .finally(() => setDeleteLoading(false));
     }
+    if (view === "list" && activeSection === "clanovi") {
+      setClanLoading(true);
+      setClanError(false);
+      setClanSearch("");
+      fetch("/api/admin/clanovi")
+        .then((r) => r.json())
+        .then((data) => setClanItems(data.items ?? []))
+        .catch(() => setClanError(true))
+        .finally(() => setClanLoading(false));
+    }
+    if (view === "delete" && activeSection === "clanovi") {
+      setDeleteClanLoading(true);
+      setDeleteClanError(false);
+      setDeleteClanSearch("");
+      fetch("/api/admin/clanovi")
+        .then((r) => r.json())
+        .then((data) => setDeleteClanItems(data.items ?? []))
+        .catch(() => setDeleteClanError(true))
+        .finally(() => setDeleteClanLoading(false));
+    }
   }, [view, activeSection]);
 
   async function handleModalConfirm() {
     if (!modal) return;
     setModalLoading(true);
-    const { type, item } = modal;
+    const { type, kind } = modal;
     try {
-      if (type === "obrisi") {
-        const res = await fetch("/api/admin/blog", {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ folder: item.folder, slug: item.slug }),
-        });
-        if (res.ok) {
-          setDeleteItems((prev) => prev.filter((b) => b.slug !== item.slug));
+      if (kind === "blog") {
+        const item = modal.item;
+        if (type === "obrisi") {
+          const res = await fetch("/api/admin/blog", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ folder: item.folder, slug: item.slug }),
+          });
+          if (res.ok) setDeleteItems((prev) => prev.filter((b) => b.slug !== item.slug));
+        } else {
+          const getRes = await fetch(`/api/admin/blog?folder=${encodeURIComponent(item.folder)}&slug=${encodeURIComponent(item.slug)}`);
+          const blogData = await getRes.json();
+          const arhivirano = type === "arhiviraj";
+          await fetch("/api/admin/blog", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...blogData, arhivirano }),
+          });
+          setDeleteItems((prev) => prev.map((b) => b.slug === item.slug ? { ...b, arhivirano } : b));
         }
       } else {
-        // arhiviraj or vrati — fetch full blog then PUT with updated arhivirano
-        const getRes = await fetch(`/api/admin/blog?folder=${encodeURIComponent(item.folder)}&slug=${encodeURIComponent(item.slug)}`);
-        const blogData = await getRes.json();
-        const arhivirano = type === "arhiviraj";
-        await fetch("/api/admin/blog", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...blogData, arhivirano }),
-        });
-        setDeleteItems((prev) =>
-          prev.map((b) => b.slug === item.slug ? { ...b, arhivirano } : b)
-        );
+        const item = modal.item;
+        if (type === "obrisi") {
+          const res = await fetch("/api/admin/clanovi", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: item.id }),
+          });
+          if (res.ok) setDeleteClanItems((prev) => prev.filter((c) => c.id !== item.id));
+        } else {
+          const arhivirano = type === "arhiviraj";
+          const fd = new FormData();
+          fd.append("id", String(item.id));
+          fd.append("name", item.name);
+          fd.append("bio", item.bio ?? "");
+          fd.append("arhivirano", String(arhivirano));
+          await fetch("/api/admin/clanovi", { method: "PUT", body: fd });
+          setDeleteClanItems((prev) => prev.map((c) => c.id === item.id ? { ...c, arhivirano } : c));
+        }
       }
     } catch {
       // silently fail — modal closes regardless
@@ -496,7 +627,10 @@ export default function AdminPage() {
                 onClick={() => {
                   if (view === "add") { setView("overview"); setStatus(null); resetForm(); }
                   else if (view === "list" || view === "delete") setView("overview");
-                  else if (view === "edit") { setView("list"); setEditData(null); setEditStatus(null); }
+                  else if (view === "edit") {
+                    if (activeSection === "clanovi") { setView("list"); setClanEditData(null); setClanEditStatus(null); }
+                    else { setView("list"); setEditData(null); setEditStatus(null); }
+                  }
                   else navigate(null);
                 }}
                 className="text-gray-400 hover:text-gray-700 transition-colors -ml-1 p-1 rounded-lg hover:bg-gray-100"
@@ -512,7 +646,7 @@ export default function AdminPage() {
                 {view === "add"      && navItem?.addLabel}
                 {view === "list"     && "Izmena sadržaja"}
                 {view === "delete"   && "Briši sadržaj"}
-                {view === "edit"     && (editData?.title ?? "Uredi blog")}
+                {view === "edit"     && (activeSection === "clanovi" ? (clanEditData?.name ?? "Uredi člana") : (editData?.title ?? "Uredi blog"))}
               </h1>
               {view === "overview" && navItem && (
                 <p className="text-xs text-gray-400 mt-0.5">{navItem.description}</p>
@@ -526,8 +660,11 @@ export default function AdminPage() {
               {view === "delete" && (
                 <p className="text-xs text-gray-400 mt-0.5">Ukloni postojeće objave — {navItem?.label}</p>
               )}
-              {view === "edit" && editData && (
+              {view === "edit" && editData && activeSection !== "clanovi" && (
                 <p className="text-xs text-gray-400 mt-0.5">{editData.date || ""}{editData.author ? ` · ${editData.author}` : ""}</p>
+              )}
+              {view === "edit" && clanEditData && activeSection === "clanovi" && (
+                <p className="text-xs text-gray-400 mt-0.5">Član</p>
               )}
             </div>
           </div>
@@ -625,60 +762,70 @@ export default function AdminPage() {
                 </button>
 
                 {/* Izmena sadržaja */}
-                <button
-                  onClick={() => activeSection === "blog" && setView("list")}
-                  disabled={activeSection !== "blog"}
-                  className={`bg-white rounded-xl p-5 border text-left transition-all group ${
-                    activeSection === "blog"
-                      ? "border-gray-100 hover:border-[#0056b3] hover:shadow-md cursor-pointer"
-                      : "border-gray-100 opacity-50 cursor-not-allowed"
-                  }`}
-                >
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
-                    activeSection === "blog"
-                      ? "bg-[#e8f0fb] text-[#0056b3] group-hover:bg-[#0056b3] group-hover:text-white"
-                      : "bg-gray-100 text-gray-400"
-                  }`}>
-                    <IcoList />
-                  </div>
-                  <h3 className="text-sm font-bold text-gray-900 mt-4">Izmena sadržaja</h3>
-                  <p className="text-xs text-gray-500 mt-0.5">Pregled/izmena svih objava</p>
-                  {activeSection === "blog" ? (
-                    <div className="flex items-center gap-1 mt-3 text-xs font-semibold text-[#0056b3] group-hover:gap-2 transition-all">
-                      <span>Otvori</span><IcoChevronRight />
-                    </div>
-                  ) : (
-                    <span className="inline-block mt-3 text-[9px] font-bold bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full">Uskoro</span>
-                  )}
-                </button>
+                {(() => {
+                  const canList = activeSection === "blog" || activeSection === "clanovi";
+                  return (
+                    <button
+                      onClick={() => canList && setView("list")}
+                      disabled={!canList}
+                      className={`bg-white rounded-xl p-5 border text-left transition-all group ${
+                        canList
+                          ? "border-gray-100 hover:border-[#0056b3] hover:shadow-md cursor-pointer"
+                          : "border-gray-100 opacity-50 cursor-not-allowed"
+                      }`}
+                    >
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
+                        canList
+                          ? "bg-[#e8f0fb] text-[#0056b3] group-hover:bg-[#0056b3] group-hover:text-white"
+                          : "bg-gray-100 text-gray-400"
+                      }`}>
+                        <IcoList />
+                      </div>
+                      <h3 className="text-sm font-bold text-gray-900 mt-4">Izmena sadržaja</h3>
+                      <p className="text-xs text-gray-500 mt-0.5">Pregled/izmena svih objava</p>
+                      {canList ? (
+                        <div className="flex items-center gap-1 mt-3 text-xs font-semibold text-[#0056b3] group-hover:gap-2 transition-all">
+                          <span>Otvori</span><IcoChevronRight />
+                        </div>
+                      ) : (
+                        <span className="inline-block mt-3 text-[9px] font-bold bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full">Uskoro</span>
+                      )}
+                    </button>
+                  );
+                })()}
 
                 {/* Briši sadržaj */}
-                <button
-                  onClick={() => activeSection === "blog" && setView("delete")}
-                  disabled={activeSection !== "blog"}
-                  className={`bg-white rounded-xl p-5 border text-left transition-all group ${
-                    activeSection === "blog"
-                      ? "border-gray-100 hover:border-red-300 hover:shadow-md cursor-pointer"
-                      : "border-gray-100 opacity-50 cursor-not-allowed"
-                  }`}
-                >
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
-                    activeSection === "blog"
-                      ? "bg-red-50 text-red-400 group-hover:bg-red-500 group-hover:text-white"
-                      : "bg-gray-100 text-gray-400"
-                  }`}>
-                    <IcoTrash />
-                  </div>
-                  <h3 className="text-sm font-bold text-gray-900 mt-4">Briši sadržaj</h3>
-                  <p className="text-xs text-gray-500 mt-0.5">Ukloni postojeće objave</p>
-                  {activeSection === "blog" ? (
-                    <div className="flex items-center gap-1 mt-3 text-xs font-semibold text-red-400 group-hover:gap-2 transition-all">
-                      <span>Otvori</span><IcoChevronRight />
-                    </div>
-                  ) : (
-                    <span className="inline-block mt-3 text-[9px] font-bold bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full">Uskoro</span>
-                  )}
-                </button>
+                {(() => {
+                  const canDelete = activeSection === "blog" || activeSection === "clanovi";
+                  return (
+                    <button
+                      onClick={() => canDelete && setView("delete")}
+                      disabled={!canDelete}
+                      className={`bg-white rounded-xl p-5 border text-left transition-all group ${
+                        canDelete
+                          ? "border-gray-100 hover:border-red-300 hover:shadow-md cursor-pointer"
+                          : "border-gray-100 opacity-50 cursor-not-allowed"
+                      }`}
+                    >
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
+                        canDelete
+                          ? "bg-red-50 text-red-400 group-hover:bg-red-500 group-hover:text-white"
+                          : "bg-gray-100 text-gray-400"
+                      }`}>
+                        <IcoTrash />
+                      </div>
+                      <h3 className="text-sm font-bold text-gray-900 mt-4">Briši sadržaj</h3>
+                      <p className="text-xs text-gray-500 mt-0.5">Ukloni postojeće objave</p>
+                      {canDelete ? (
+                        <div className="flex items-center gap-1 mt-3 text-xs font-semibold text-red-400 group-hover:gap-2 transition-all">
+                          <span>Otvori</span><IcoChevronRight />
+                        </div>
+                      ) : (
+                        <span className="inline-block mt-3 text-[9px] font-bold bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full">Uskoro</span>
+                      )}
+                    </button>
+                  );
+                })()}
 
               </div>
             </div>
@@ -768,6 +915,71 @@ export default function AdminPage() {
             </div>
           )}
 
+          {/* ---- LIST / IZMENA — CLANOVI ---- */}
+          {view === "list" && activeSection === "clanovi" && (
+            <div className="space-y-4">
+              <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 flex items-center gap-3">
+                <div className="relative flex-1">
+                  <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden="true">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                  </svg>
+                  <input
+                    type="text"
+                    value={clanSearch}
+                    onChange={(e) => setClanSearch(e.target.value)}
+                    placeholder="Pretraži po imenu..."
+                    className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0056b3] focus:border-transparent transition"
+                  />
+                </div>
+                {clanSearch && (
+                  <button onClick={() => setClanSearch("")} className="text-xs text-gray-400 hover:text-gray-700 px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0">Obriši</button>
+                )}
+              </div>
+
+              <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                <div className="grid grid-cols-12 gap-4 px-5 py-3 bg-gray-50 border-b border-gray-100 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                  <div className="col-span-5">Ime</div>
+                  <div className="col-span-4 hidden sm:block">Uloga</div>
+                  <div className="col-span-3 text-right">Akcija</div>
+                </div>
+
+                {clanLoading && [1, 2, 3].map((i) => (
+                  <div key={i} className="grid grid-cols-12 gap-4 px-5 py-4 border-b border-gray-50 items-center animate-pulse">
+                    <div className="col-span-5"><div className="h-3.5 bg-gray-100 rounded-full w-3/4" /></div>
+                    <div className="col-span-4 hidden sm:block"><div className="h-3 bg-gray-100 rounded-full w-2/3" /></div>
+                    <div className="col-span-3 flex justify-end"><div className="h-7 w-16 bg-gray-100 rounded-lg" /></div>
+                  </div>
+                ))}
+
+                {!clanLoading && clanItems.filter((c) => c.name.toLowerCase().includes(clanSearch.toLowerCase())).map((item) => (
+                  <div key={item.id} className="grid grid-cols-12 gap-4 px-5 py-4 border-b border-gray-50 items-center hover:bg-gray-50 transition-colors">
+                    <div className="col-span-5">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{item.name}</p>
+                    </div>
+                    <div className="col-span-4 hidden sm:block text-sm text-gray-500 truncate">{item.role || "—"}</div>
+                    <div className="col-span-3 flex justify-end">
+                      <button
+                        onClick={() => openClanEdit(item)}
+                        className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#e8f0fb] text-[#0056b3] hover:bg-[#0056b3] hover:text-white transition-colors"
+                      >
+                        Izaberi
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                {!clanLoading && !clanError && clanItems.filter((c) => c.name.toLowerCase().includes(clanSearch.toLowerCase())).length === 0 && (
+                  <div className="px-5 py-12 text-center">
+                    <div className="w-12 h-12 rounded-2xl bg-gray-100 text-gray-300 flex items-center justify-center mx-auto mb-3"><IcoUsers /></div>
+                    <p className="text-sm font-semibold text-gray-400">
+                      {clanSearch ? `Nema rezultata za "${clanSearch}"` : "Nema članova"}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* ---- DELETE ---- */}
           {view === "delete" && activeSection === "blog" && (
             <div className="space-y-4">
@@ -835,21 +1047,21 @@ export default function AdminPage() {
                     <div className="col-span-5 flex justify-end gap-2">
                       {item.arhivirano ? (
                         <button
-                          onClick={() => setModal({ type: "vrati", item })}
+                          onClick={() => setModal({ type: "vrati", kind: "blog", item })}
                           className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition-colors whitespace-nowrap"
                         >
                           Vrati
                         </button>
                       ) : (
                         <button
-                          onClick={() => setModal({ type: "arhiviraj", item })}
+                          onClick={() => setModal({ type: "arhiviraj", kind: "blog", item })}
                           className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors whitespace-nowrap"
                         >
                           Arhiviraj
                         </button>
                       )}
                       <button
-                        onClick={() => setModal({ type: "obrisi", item })}
+                        onClick={() => setModal({ type: "obrisi", kind: "blog", item })}
                         className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-500 hover:text-white transition-colors whitespace-nowrap"
                       >
                         Obriši
@@ -871,8 +1083,196 @@ export default function AdminPage() {
             </div>
           )}
 
+          {/* ---- DELETE — CLANOVI ---- */}
+          {view === "delete" && activeSection === "clanovi" && (
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3.5">
+                <svg width="18" height="18" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" className="flex-shrink-0 mt-0.5" aria-hidden="true">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                <div>
+                  <p className="text-sm font-semibold text-amber-700">Pažnja — brisanje je nepovratno</p>
+                  <p className="text-xs text-amber-600 mt-0.5">Obrisani član i njegova fotografija ne mogu se povratiti. Svaka stavka zahteva potvrdu pre brisanja.</p>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 flex items-center gap-3">
+                <div className="relative flex-1">
+                  <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden="true">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                  </svg>
+                  <input
+                    type="text"
+                    value={deleteClanSearch}
+                    onChange={(e) => setDeleteClanSearch(e.target.value)}
+                    placeholder="Pretraži po imenu..."
+                    className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0056b3] focus:border-transparent transition"
+                  />
+                </div>
+                {deleteClanSearch && (
+                  <button onClick={() => setDeleteClanSearch("")} className="text-xs text-gray-400 hover:text-gray-700 px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0">Obriši</button>
+                )}
+              </div>
+
+              <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                <div className="grid grid-cols-12 gap-4 px-5 py-3 bg-gray-50 border-b border-gray-100 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                  <div className="col-span-5">Ime</div>
+                  <div className="col-span-2 hidden sm:block">Uloga</div>
+                  <div className="col-span-5 text-right">Akcija</div>
+                </div>
+
+                {deleteClanLoading && [1, 2, 3].map((i) => (
+                  <div key={i} className="grid grid-cols-12 gap-4 px-5 py-4 border-b border-gray-50 items-center animate-pulse">
+                    <div className="col-span-5"><div className="h-3.5 bg-gray-100 rounded-full w-3/4" /></div>
+                    <div className="col-span-2 hidden sm:block"><div className="h-3 bg-gray-100 rounded-full" /></div>
+                    <div className="col-span-5 flex justify-end gap-2"><div className="h-7 w-20 bg-gray-100 rounded-lg" /><div className="h-7 w-16 bg-red-50 rounded-lg" /></div>
+                  </div>
+                ))}
+
+                {!deleteClanLoading && deleteClanItems.filter((c) => c.name.toLowerCase().includes(deleteClanSearch.toLowerCase())).map((item) => (
+                  <div key={item.id} className="grid grid-cols-12 gap-4 px-5 py-4 border-b border-gray-50 items-center hover:bg-gray-50 transition-colors">
+                    <div className="col-span-5">
+                      {item.arhivirano && (
+                        <span className="inline-block text-[9px] font-bold bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full mb-1">Arhivirano</span>
+                      )}
+                      <p className="text-sm font-semibold text-gray-900 truncate">{item.name}</p>
+                    </div>
+                    <div className="col-span-2 hidden sm:block text-sm text-gray-500 truncate">{item.role || "—"}</div>
+                    <div className="col-span-5 flex justify-end gap-2">
+                      {item.arhivirano ? (
+                        <button
+                          onClick={() => setModal({ type: "vrati", kind: "clan", item })}
+                          className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition-colors whitespace-nowrap"
+                        >
+                          Vrati
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => setModal({ type: "arhiviraj", kind: "clan", item })}
+                          className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors whitespace-nowrap"
+                        >
+                          Arhiviraj
+                        </button>
+                      )}
+                      <button
+                        onClick={() => setModal({ type: "obrisi", kind: "clan", item })}
+                        className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-500 hover:text-white transition-colors whitespace-nowrap"
+                      >
+                        Obriši
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                {!deleteClanLoading && !deleteClanError && deleteClanItems.filter((c) => c.name.toLowerCase().includes(deleteClanSearch.toLowerCase())).length === 0 && (
+                  <div className="px-5 py-12 text-center">
+                    <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-300 flex items-center justify-center mx-auto mb-3"><IcoTrash /></div>
+                    <p className="text-sm font-semibold text-gray-400">
+                      {deleteClanSearch ? `Nema rezultata za "${deleteClanSearch}"` : "Nema članova"}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ---- EDIT CLAN ---- */}
+          {view === "edit" && activeSection === "clanovi" && (
+            <div className="flex flex-col gap-4">
+              {clanEditLoading && (
+                <div className="flex items-center gap-2 text-sm text-gray-400 py-4">
+                  <svg className="animate-spin" width="16" height="16" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+                  </svg>
+                  Učitavanje podataka...
+                </div>
+              )}
+
+              {!clanEditLoading && clanEditData && (
+                <>
+                  <div className="flex flex-col lg:flex-row gap-4 lg:items-start">
+                    {/* Leva kolona — sadržaj */}
+                    <div className="flex-1 min-w-0 bg-white rounded-xl border border-gray-100 p-6 space-y-5">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Ime i prezime <span className="text-red-400">*</span></label>
+                        <input
+                          type="text"
+                          value={clanEditData.name}
+                          onChange={(e) => setClanEditData((p) => p && ({ ...p, name: e.target.value }))}
+                          className={inputCls}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Biografija</label>
+                        <textarea
+                          rows={12}
+                          value={clanEditData.bio}
+                          onChange={(e) => setClanEditData((p) => p && ({ ...p, bio: e.target.value }))}
+                          className={textareaCls}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Desna kolona — fotografija */}
+                    <div className="w-full lg:w-64 flex-shrink-0 bg-white rounded-xl border border-gray-100 p-5 space-y-4">
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Fotografija</p>
+                      {clanEditData.image && (
+                        <p className="text-xs text-gray-500 leading-relaxed break-all">
+                          Trenutna: <span className="font-medium text-gray-700">{clanEditData.image.split("/").pop()}</span>
+                        </p>
+                      )}
+                      <input
+                        ref={clanEditImageRef}
+                        type="file"
+                        accept="image/*"
+                        className={fileCls}
+                      />
+                      <div className="space-y-1.5">
+                        <p className="text-xs text-gray-500 leading-relaxed">
+                          Ako izaberete novu fotografiju, prethodna će biti automatski zamenjena.
+                        </p>
+                        <p className="text-xs text-gray-400 leading-relaxed">
+                          Nova fotografija preuzima identičan naziv prethodne.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Status + Akcije */}
+                  <div className="bg-white rounded-xl border border-gray-100 px-5 py-4 flex items-center gap-3">
+                    {clanEditStatus && (
+                      <div className={`flex items-center gap-2 flex-1 px-4 py-2.5 rounded-lg text-sm font-medium ${clanEditStatus.ok ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
+                        {clanEditStatus.ok ? (
+                          <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
+                        ) : (
+                          <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        )}
+                        {clanEditStatus.msg}
+                      </div>
+                    )}
+                    {!clanEditStatus && <div className="flex-1" />}
+                    <button
+                      onClick={() => { setView("list"); setClanEditData(null); setClanEditStatus(null); }}
+                      className="px-5 py-2.5 border border-gray-200 text-sm font-semibold text-gray-600 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      Otkaži
+                    </button>
+                    <button
+                      onClick={handleClanEditSave}
+                      disabled={clanEditSaving || !clanEditData.name.trim()}
+                      className="px-6 py-2.5 bg-[#0056b3] text-white text-sm font-bold rounded-lg hover:bg-[#003d80] transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                    >
+                      {clanEditSaving ? "Čuvanje..." : "Sačuvaj izmene"}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
           {/* ---- EDIT BLOG ---- */}
-          {view === "edit" && (
+          {view === "edit" && activeSection !== "clanovi" && (
             <div className="flex flex-col gap-4">
               {editLoading && (
                 <div className="flex items-center gap-2 text-sm text-gray-400 py-4">
@@ -1219,21 +1619,56 @@ export default function AdminPage() {
                       <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                         Ime i prezime <span className="text-red-400">*</span>
                       </label>
-                      <input ref={nameRef} type="text" placeholder="Ime i prezime..." className={inputCls} />
+                      <input
+                        ref={nameRef}
+                        type="text"
+                        placeholder="Ime i prezime..."
+                        className={inputCls}
+                        onChange={(e) => setClanNameVal(e.target.value)}
+                      />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1.5">Biografija</label>
-                      <textarea ref={bioRef} rows={10} placeholder="Kratka biografija člana..." className={textareaCls} />
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-sm font-semibold text-gray-700">
+                          Biografija <span className="text-red-400">*</span>
+                        </label>
+                        <span className={`text-xs font-medium tabular-nums ${clanBioVal.length > CLAN_BIO_MAX ? "text-red-500 font-bold" : clanBioVal.length > CLAN_BIO_MAX * 0.9 ? "text-amber-500" : "text-gray-400"}`}>
+                          {clanBioVal.length}/{CLAN_BIO_MAX}
+                        </span>
+                      </div>
+                      <textarea
+                        ref={bioRef}
+                        rows={10}
+                        placeholder="Kratka biografija člana..."
+                        className={`${textareaCls} ${clanBioVal.length > CLAN_BIO_MAX ? "border-red-300 focus:ring-red-400" : ""}`}
+                        onChange={(e) => setClanBioVal(e.target.value)}
+                      />
+                      {clanBioVal.length > CLAN_BIO_MAX && (
+                        <p className="text-xs text-red-500 mt-1">Biografija ne sme biti duža od {CLAN_BIO_MAX} karaktera.</p>
+                      )}
                     </div>
                   </div>
 
                   {/* Desna kolona */}
                   <div className="w-full lg:w-64 flex-shrink-0 bg-white rounded-xl border border-gray-100 p-5 space-y-4">
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Fotografija</p>
-                    <input ref={imageRef} type="file" accept="image/*" className={fileCls} />
-                    <p className="text-xs text-gray-400 leading-relaxed">
-                      Preporučena kvadratna fotografija. JPG ili PNG, maks. 5MB.
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                      Fotografija <span className="text-red-400">*</span>
                     </p>
+                    <input
+                      ref={imageRef}
+                      type="file"
+                      accept="image/*"
+                      className={fileCls}
+                      onChange={(e) => setClanHasImage((e.target.files?.length ?? 0) > 0)}
+                    />
+                    <div className="space-y-1.5">
+                      <p className="text-xs text-gray-500 leading-relaxed">
+                        Moguće je priložiti samo jednu fotografiju — ona će biti vidljiva na stranici članova.
+                      </p>
+                      <p className="text-xs text-gray-400 leading-relaxed">
+                        Preporučeni format: portretna fotografija (3:4), JPG ili PNG, do 5 MB.
+                      </p>
+                    </div>
                   </div>
 
                 </div>
@@ -1264,7 +1699,7 @@ export default function AdminPage() {
                 </button>
                 <button
                   onClick={handleUpload}
-                  disabled={loading || (activeSection === "blog" && !blogCanSave)}
+                  disabled={loading || (activeSection === "blog" && !blogCanSave) || (activeSection === "clanovi" && !clanCanSave)}
                   className="px-6 py-2.5 bg-[#0056b3] text-white text-sm font-bold rounded-lg hover:bg-[#003d80] transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
                 >
                   {loading ? "Čuvanje..." : "Sačuvaj"}
@@ -1307,22 +1742,31 @@ export default function AdminPage() {
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p id="modal-title" className="text-sm font-bold text-gray-900">
-                  {modal.type === "obrisi" && "Obriši blog post"}
-                  {modal.type === "arhiviraj" && "Arhiviraj blog post"}
-                  {modal.type === "vrati" && "Vrati blog post"}
-                </p>
-                <p className="text-xs text-gray-500 mt-1 leading-relaxed">
-                  {modal.type === "obrisi" && (
-                    <>Sadržaj se bezpovratno briše sa sajta i projekta. Da li ste sigurni da želite da obrišete <span className="font-semibold text-gray-800">{modal.item.title}</span>?</>
-                  )}
-                  {modal.type === "arhiviraj" && (
-                    <>Blog <span className="font-semibold text-gray-800">{modal.item.title}</span> biće sakriven sa sajta. Sadržaj ostaje na projektu i može se vratiti.</>
-                  )}
-                  {modal.type === "vrati" && (
-                    <>Blog <span className="font-semibold text-gray-800">{modal.item.title}</span> biće ponovo vidljiv na sajtu.</>
-                  )}
-                </p>
+                {(() => {
+                  const isClan = modal.kind === "clan";
+                  const label = isClan ? modal.item.name : modal.item.title;
+                  const noun = isClan ? "Član" : "Blog";
+                  return (
+                    <>
+                      <p id="modal-title" className="text-sm font-bold text-gray-900">
+                        {modal.type === "obrisi" && `Obriši ${isClan ? "člana" : "blog post"}`}
+                        {modal.type === "arhiviraj" && `Arhiviraj ${isClan ? "člana" : "blog post"}`}
+                        {modal.type === "vrati" && `Vrati ${isClan ? "člana" : "blog post"}`}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                        {modal.type === "obrisi" && (
+                          <>{isClan ? "Član" : "Sadržaj"} se bezpovratno briše{isClan ? "." : " sa sajta i projekta."} Da li ste sigurni da želite da obrišete <span className="font-semibold text-gray-800">{label}</span>?</>
+                        )}
+                        {modal.type === "arhiviraj" && (
+                          <>{noun} <span className="font-semibold text-gray-800">{label}</span> biće sakriven sa sajta. {isClan ? "Podaci ostaju i mogu se vratiti." : "Sadržaj ostaje na projektu i može se vratiti."}</>
+                        )}
+                        {modal.type === "vrati" && (
+                          <>{noun} <span className="font-semibold text-gray-800">{label}</span> biće ponovo vidljiv na sajtu.</>
+                        )}
+                      </p>
+                    </>
+                  );
+                })()}
               </div>
             </div>
             <div className="flex gap-2 justify-end pt-1">

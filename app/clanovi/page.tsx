@@ -14,7 +14,7 @@ const DEFAULT_IMAGE = "/content/clanovi/default.jpg";
 function getMembers() {
   const filePath = path.join(process.cwd(), "content", "clanovi", "clanovi.json");
   const raw = fs.readFileSync(filePath, "utf-8");
-  const members = JSON.parse(raw) as { name: string; role: string; image: string; bio: string }[];
+  const members = JSON.parse(raw) as { name: string; role: string; image: string; bio: string; arhivirano?: boolean }[];
   return members.map((m) => {
     const publicPath = path.join(process.cwd(), "public", m.image);
     const imageExists = m.image && fs.existsSync(publicPath);
@@ -23,7 +23,7 @@ function getMembers() {
 }
 
 export default function ClanoviPage() {
-  const members = getMembers().filter((m) => m.name.trim() !== "");
+  const members = getMembers().filter((m) => m.name.trim() !== "" && !m.arhivirano);
 
   return (
     <div className="section-padding">
