@@ -28,6 +28,11 @@ export default function BlogSlugPage({ params }: Props) {
 
   const { meta, content } = data;
 
+  const FLOAT_END = '{/* float-end */}';
+  const splitIdx = content.indexOf(FLOAT_END);
+  const floatBefore = splitIdx >= 0 ? content.slice(0, splitIdx).trim() : '';
+  const floatAfter  = splitIdx >= 0 ? content.slice(splitIdx + FLOAT_END.length).trim() : content;
+
   if (meta.arhivirano === true) {
     return (
       <div className="section-padding">
@@ -95,7 +100,39 @@ export default function BlogSlugPage({ params }: Props) {
               {format(new Date(meta.date), "d. MMMM yyyy.", { locale: srLatn })}
             </time>
           </div>
-          {meta.image && !meta.noHero && meta.heroLayout === "float" ? (
+          {meta.image && !meta.noHero && meta.heroLayout === "float-2-3" ? (
+            <>
+              <div className="md:grid md:grid-cols-2 md:gap-8 mb-6 items-start">
+                <div className="relative rounded-xl overflow-hidden aspect-[2/3] mb-4 md:mb-0">
+                  <Img src={meta.image} alt={meta.title} fill className="object-cover" priority />
+                </div>
+                {floatBefore && (
+                  <div className="prose max-w-none">
+                    <MDXRemote source={floatBefore} />
+                  </div>
+                )}
+              </div>
+              <div className="prose max-w-none w-full overflow-hidden">
+                <MDXRemote source={floatAfter} />
+              </div>
+            </>
+          ) : meta.image && !meta.noHero && meta.heroLayout === "float-4-3" ? (
+            <>
+              <div className="md:grid md:grid-cols-2 md:gap-8 mb-6 items-start">
+                <div className="relative rounded-xl overflow-hidden aspect-[4/3] mb-4 md:mb-0">
+                  <Img src={meta.image} alt={meta.title} fill className="object-cover" priority />
+                </div>
+                {floatBefore && (
+                  <div className="prose max-w-none">
+                    <MDXRemote source={floatBefore} />
+                  </div>
+                )}
+              </div>
+              <div className="prose max-w-none w-full overflow-hidden">
+                <MDXRemote source={floatAfter} />
+              </div>
+            </>
+          ) : meta.image && !meta.noHero && meta.heroLayout === "float" ? (
             <div className="mb-8 overflow-hidden">
               <div className="mb-4 md:float-left md:w-1/2 md:mr-8 md:mb-4">
                 <Img src={meta.image} alt={meta.title} width={800} height={1200} className="w-full h-auto rounded-xl" priority />

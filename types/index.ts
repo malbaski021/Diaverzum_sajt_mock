@@ -4,7 +4,7 @@ export interface ArticleMeta {
   excerpt: string;
   image?: string;
   noHero?: boolean;
-  heroLayout?: "top" | "float" | "landscape";
+  heroLayout?: "top" | "float" | "landscape" | "float-4-3" | "float-2-3";
   gallery?: string[];
   author: string;
   tags: string[];
