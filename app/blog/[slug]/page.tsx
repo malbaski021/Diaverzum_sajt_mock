@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Img from "@/components/Img";
+import InstaText from "@/components/InstaText";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import { getArticleBySlug, getAllSlugs } from "@/lib/mdx";
 import { format } from "date-fns";
@@ -88,7 +89,7 @@ export default function BlogSlugPage({ params }: Props) {
           )}
           <h1 className="text-gray-900 mb-4">{meta.title}</h1>
           <div className="flex items-center gap-4 text-sm text-gray-400 mb-8 pb-8 border-b border-brand-gray-mid">
-            <span>Autor: {meta.author}</span>
+            <InstaText text={`Autor: ${meta.author}`} />
             <span aria-hidden="true">·</span>
             <time dateTime={meta.date}>
               {format(new Date(meta.date), "d. MMMM yyyy.", { locale: srLatn })}
@@ -103,6 +104,15 @@ export default function BlogSlugPage({ params }: Props) {
                 <MDXRemote source={content} />
               </div>
             </div>
+          ) : meta.image && !meta.noHero && meta.heroLayout === "landscape" ? (
+            <>
+              <div className="mb-8 rounded-xl overflow-hidden">
+                <Img src={meta.image} alt={meta.title} width={1263} height={664} className="w-full h-auto" priority />
+              </div>
+              <div className="prose max-w-none w-full overflow-hidden">
+                <MDXRemote source={content} />
+              </div>
+            </>
           ) : (
             <>
               {meta.image && !meta.noHero && (

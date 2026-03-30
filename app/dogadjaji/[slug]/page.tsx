@@ -6,6 +6,7 @@ import { getEventBySlug, getAllEventSlugs } from "@/lib/events";
 import { format } from "date-fns";
 import { srLatn } from "date-fns/locale";
 import ImageGallery from "@/components/ImageGallery";
+import InstaText from "@/components/InstaText";
 
 interface Props {
   params: { slug: string };
@@ -73,21 +74,7 @@ export default function DogadjajPage({ params }: Props) {
           <div className="prose max-w-none">
             {paragraphs.map((para, i) => (
               <p key={i} className="text-gray-700 leading-relaxed mb-4 last:mb-0">
-                {para.split(/(@[\w.]+)/).map((part, j) =>
-                  part.startsWith("@") ? (
-                    <a
-                      key={j}
-                      href={`https://www.instagram.com/${part.slice(1)}/`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-brand-blue hover:underline"
-                    >
-                      {part}
-                    </a>
-                  ) : (
-                    part
-                  )
-                )}
+                <InstaText text={para} />
               </p>
             ))}
           </div>
