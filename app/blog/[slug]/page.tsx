@@ -104,7 +104,7 @@ export default function BlogSlugPage({ params }: Props) {
             <>
               <div className="md:grid md:grid-cols-2 md:gap-8 mb-6 items-start">
                 <div className="relative rounded-xl overflow-hidden aspect-[2/3] mb-4 md:mb-0">
-                  <Img src={meta.image} alt={meta.title} fill className="object-cover" priority />
+                  <Img src={meta.image} alt={meta.title} fill className="object-cover" style={{ objectPosition: meta.heroObjectPosition ?? "center" }} priority />
                 </div>
                 {floatBefore && (
                   <div className="prose max-w-none">
@@ -120,7 +120,7 @@ export default function BlogSlugPage({ params }: Props) {
             <>
               <div className="md:grid md:grid-cols-2 md:gap-8 mb-6 items-start">
                 <div className="relative rounded-xl overflow-hidden aspect-[4/3] mb-4 md:mb-0">
-                  <Img src={meta.image} alt={meta.title} fill className="object-cover" priority />
+                  <Img src={meta.image} alt={meta.title} fill className="object-cover" style={{ objectPosition: meta.heroObjectPosition ?? "center" }} priority />
                 </div>
                 {floatBefore && (
                   <div className="prose max-w-none">

@@ -5,6 +5,7 @@ export interface ArticleMeta {
   image?: string;
   noHero?: boolean;
   heroLayout?: "top" | "float" | "landscape" | "float-4-3" | "float-2-3";
+  heroObjectPosition?: string;
   gallery?: string[];
   author: string;
   tags: string[];
