@@ -96,13 +96,16 @@ export default function EventsSearch({ events }: Props) {
                 )}
               </div>
               <div className="p-5">
-                <time dateTime={event.date} className="text-xs text-brand-gray-text uppercase tracking-wider">
-                  {format(new Date(event.date), "d. MMMM yyyy.", { locale: srLatn })}
-                </time>
-                <h3 className="font-bold text-gray-900 mt-2 mb-2 group-hover:text-brand-blue transition-colors">
+                <h3 className="font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-brand-blue transition-colors">
                   {event.title}
                 </h3>
-                <p className="text-gray-500 text-sm line-clamp-2">{event.content.split("\n")[0]}</p>
+                <p className="text-gray-500 text-sm line-clamp-2 mb-4">{event.excerpt}</p>
+                <div className="flex items-center justify-between text-xs text-gray-400">
+                  <span>{event.author}</span>
+                  <time dateTime={event.date}>
+                    {format(new Date(event.date), "d. MMM yyyy.", { locale: srLatn })}
+                  </time>
+                </div>
               </div>
             </Link>
           ))}

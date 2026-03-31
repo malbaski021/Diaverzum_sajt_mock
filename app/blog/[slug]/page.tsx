@@ -94,11 +94,15 @@ export default function BlogSlugPage({ params }: Props) {
           )}
           <h1 className="text-gray-900 mb-4">{meta.title}</h1>
           <div className="flex items-center gap-4 text-sm text-gray-400 mb-8 pb-8 border-b border-brand-gray-mid">
-            <InstaText text={`Autor: ${meta.author}`} />
-            <span aria-hidden="true">·</span>
             <time dateTime={meta.date}>
               {format(new Date(meta.date), "d. MMMM yyyy.", { locale: srLatn })}
             </time>
+            {meta.author && (
+              <>
+                <span aria-hidden="true">·</span>
+                <InstaText text={`Autor: ${meta.author}`} />
+              </>
+            )}
           </div>
           {meta.image && !meta.noHero && meta.heroLayout === "float-2-3" ? (
             <>

@@ -53,9 +53,17 @@ export default function DogadjajPage({ params }: Props) {
             Događaj
           </span>
           <h1 className="text-gray-900 mb-2">{event.title}</h1>
-          <time dateTime={event.date} className="text-sm text-brand-gray-text">
-            {format(new Date(event.date), "d. MMMM yyyy.", { locale: srLatn })}
-          </time>
+          <div className="flex items-center gap-4 text-sm text-brand-gray-text">
+            <time dateTime={event.date}>
+              {format(new Date(event.date), "d. MMMM yyyy.", { locale: srLatn })}
+            </time>
+            {event.author && (
+              <>
+                <span aria-hidden="true">·</span>
+                <InstaText text={`Autor: ${event.author}`} />
+              </>
+            )}
+          </div>
         </div>
 
         {/* Hero: image floats left, text wraps around and expands below */}

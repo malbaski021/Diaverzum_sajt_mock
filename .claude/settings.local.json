@@ -38,7 +38,24 @@
       "Bash(cmd.exe /c \"taskkill /PID 4108 /F 2>&1\")",
       "Bash(echo \"exit: $?\")",
       "Bash(cmd.exe /c \"tasklist /FI \\\\\"PID eq 4108\\\\\" /FO LIST\")",
-      "Bash(cmd.exe /c tasklist /FI \"PID eq 4108\")"
+      "Bash(cmd.exe /c tasklist /FI \"PID eq 4108\")",
+      "Bash(git pull:*)",
+      "Bash(npx next:*)",
+      "Bash(cmd /c \"rmdir /s /q .next\")",
+      "Bash(python -c \"from PIL import Image; print\\(''Pillow OK''\\)\")",
+      "Bash(pip install:*)",
+      "Bash(python:*)",
+      "Bash(git merge:*)",
+      "Bash(python3:*)",
+      "Bash(find /d/Diaverzum_sajt_mock -type f \\\\\\(-name *.js -o -name *.ts -o -name *.jsx -o -name *.tsx \\\\\\) ! -path */node_modules/* ! -path */.next/* ! -path */out/*)",
+      "Bash(find /d/Diaverzum_sajt_mock/content -type f -name *.mdx)",
+      "Bash(grep -r \"@\" /d/Diaverzum_sajt_mock --include=\"*.tsx\" --include=\"*.ts\" --include=\"*.mdx\" ! -path \"*/node_modules/*\" ! -path \"*/.next/*\" ! -path \"*/out/*\")",
+      "Bash(find /d/Diaverzum_sajt_mock -type f -name *util* -o -name *plugin* -o -name *transform*)",
+      "Bash(grep -r @[a-zA-Z_] /d/Diaverzum_sajt_mock/app /d/Diaverzum_sajt_mock/components /d/Diaverzum_sajt_mock/lib --include=*.ts --include=*.tsx)",
+      "Bash(find D:/Diaverzum_sajt_mock/content/blog -maxdepth 1 -iname *divcibare* -o -iname *dečiji*)",
+      "Bash(ffmpeg -version)",
+      "Bash(ffmpeg -i \"D:/Diaverzum_sajt_mock/content/blog/akcija u kompaniji Lear/1.heic\" \"D:/Diaverzum_sajt_mock/content/blog/akcija u kompaniji Lear/1.jpg\" -y)",
+      "Bash(find \"D:/Diaverzum_sajt_mock/content/dogadjaji\" -name \"*.txt\" -delete)"
     ]
   }
 }
