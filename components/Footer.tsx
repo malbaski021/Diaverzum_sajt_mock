@@ -35,7 +35,7 @@ export default function Footer() {
               />
             </div>
             <div className="text-gray-400 text-sm leading-relaxed max-w-sm space-y-1">
-              <p className="font-semibold text-gray-300 uppercase tracking-wide text-xs">Udruženje osoba sa dijabetesom „Diaverzum"</p>
+              <p className="font-semibold text-gray-300 uppercase tracking-wide text-xs">Udruženje osoba sa dijabetesom &bdquo;Diaverzum&ldquo;</p>
               <p>Bulevar Oslobođenja 33, 21000 Novi Sad</p>
               <p>Račun 160-6000001726236-74 kod Banca Intesa</p>
               <p>PIB: 113746240 &nbsp;·&nbsp; Matični: 28362196</p>
