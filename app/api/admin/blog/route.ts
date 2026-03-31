@@ -97,7 +97,8 @@ function localWriteText(relPath: string, content: string) {
 // --- Frontmatter parser ---
 
 function parseFrontmatter(content: string): Record<string, string> {
-  const match = content.match(/^---\n([\s\S]*?)\n---/);
+  const normalized = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const match = normalized.match(/^---\n([\s\S]*?)\n---/);
   if (!match) return {};
   const fm: Record<string, string> = {};
   for (const line of match[1].split("\n")) {
@@ -159,8 +160,9 @@ async function listGitHubBlogs() {
 // --- Handler ---
 
 function extractBody(content: string): string {
-  const match = content.match(/^---\n[\s\S]*?\n---\n?([\s\S]*)$/);
-  return match ? match[1].trim() : content;
+  const normalized = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const match = normalized.match(/^---\n[\s\S]*?\n---\n?([\s\S]*)$/);
+  return match ? match[1].trim() : normalized.trim();
 }
 
 export async function GET(req: NextRequest) {
@@ -308,11 +310,12 @@ export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const title = (formData.get("title") as string)?.trim();
-    const author = (formData.get("author") as string)?.trim() ?? "";
+    const author = (formData.get("author") as string)?.trim() || "Diaverzum Novi Sad";
     const date = (formData.get("date") as string)?.trim() ?? new Date().toISOString().split("T")[0];
     const text = (formData.get("text") as string)?.trim() ?? "";
     const heroLayout = (formData.get("heroLayout") as string) ?? "top";
     const tags: string[] = JSON.parse((formData.get("tags") as string) ?? "[]");
+    const arhivirano = (formData.get("arhivirano") as string) === "true";
     const mainImage = formData.get("mainImage") as File | null;
     const galleryFiles = formData.getAll("gallery") as File[];
 
@@ -321,6 +324,24 @@ export async function POST(req: NextRequest) {
     }
 
     const slug = toSlug(title);
+
+    if (!slug) {
+      return NextResponse.json({ error: "Naslov mora sadržati bar jedno slovo ili broj." }, { status: 400 });
+    }
+
+    const ALLOWED_TYPES = ["image/jpeg", "image/png"];
+    const MAX_BYTES = 5 * 1024 * 1024;
+    for (const { file } of [
+      ...(mainImage && mainImage.size > 0 ? [{ file: mainImage }] : []),
+      ...galleryFiles.filter((f) => f.size > 0).map((f) => ({ file: f })),
+    ]) {
+      if (!ALLOWED_TYPES.includes(file.type)) {
+        return NextResponse.json({ error: `Slika "${file.name}" nije dozvoljen format. Dozvoljeni su samo JPG i PNG.` }, { status: 400 });
+      }
+      if (file.size > MAX_BYTES) {
+        return NextResponse.json({ error: `Slika "${file.name}" je prevelika (max 5 MB).` }, { status: 400 });
+      }
+    }
     const folderName = title;
     const excerpt = text.slice(0, 160).replace(/\n/g, " ").trim();
     const mdxContent = buildMdx(title, date, excerpt, author, tags, heroLayout) + text;
@@ -330,6 +351,18 @@ export async function POST(req: NextRequest) {
     galleryFiles
       .filter((f) => f.size > 0)
       .forEach((f, i) => allImages.push({ file: f, index: i + 2 }));
+
+    // Provera duplikata
+    if (IS_LOCAL) {
+      if (fs.existsSync(path.join(ROOT, `content/blog/${folderName}`))) {
+        return NextResponse.json({ error: `Blog sa naslovom "${title}" već postoji.` }, { status: 409 });
+      }
+    } else {
+      const existingSha = await getFileSha(`content/blog/${folderName}/${slug}.mdx`);
+      if (existingSha) {
+        return NextResponse.json({ error: `Blog sa naslovom "${title}" već postoji.` }, { status: 409 });
+      }
+    }
 
     if (IS_LOCAL) {
       const contentFolder = `content/blog/${folderName}`;

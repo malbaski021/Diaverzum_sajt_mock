@@ -161,6 +161,7 @@ interface BlogEditData {
   heroLayout: string;
   tags: string[];
   text: string;
+  arhivirano: boolean;
 }
 
 interface ClanMember {
@@ -200,6 +201,8 @@ export default function AdminPage() {
   const [editSaving,  setEditSaving]  = useState(false);
   const [editStatus,  setEditStatus]  = useState<{ ok: boolean; msg: string } | null>(null);
   const [editNewTag,  setEditNewTag]  = useState("");
+  const [editTitleError, setEditTitleError] = useState<string | null>(null);
+  const [editTextError,  setEditTextError]  = useState<string | null>(null);
 
   // Delete view (blog)
   const [deleteSearch,   setDeleteSearch]   = useState("");
@@ -234,6 +237,7 @@ export default function AdminPage() {
   // Form state
   const [, setIzvor]               = useState("");
   const [heroLayout, setHeroLayout]     = useState<"top" | "float" | "">("");
+  const [arhivirano, setArhivirano]     = useState(false);
   const [tags, setTags]                 = useState<string[]>([]);
   const [newTag, setNewTag]             = useState("");
   const [loading, setLoading]           = useState(false);
@@ -244,8 +248,41 @@ export default function AdminPage() {
   const [textVal,  setTextVal]  = useState("");
   const [dateVal,  setDateVal]  = useState(today);
   const [hasImage, setHasImage] = useState(false);
+  const [imageFileError,   setImageFileError]   = useState<string | null>(null);
+  const [galleryFileError, setGalleryFileError] = useState<string | null>(null);
+  const [titleError,       setTitleError]       = useState<string | null>(null);
+  const [textError,        setTextError]        = useState<string | null>(null);
 
-  const blogCanSave = titleVal.trim() !== "" && textVal.trim() !== "" && dateVal !== "" && hasImage && heroLayout !== "";
+  const ALLOWED_IMG_TYPES = ["image/jpeg", "image/png"];
+  const MAX_IMG_BYTES = 5 * 1024 * 1024;
+  const FORBIDDEN_TITLE_CHARS = /[/\\:*?"<>|]/;
+
+  function validateImageFiles(files: File[]): string | null {
+    for (const f of files) {
+      if (!ALLOWED_IMG_TYPES.includes(f.type))
+        return `"${f.name}" nije dozvoljen format. Dozvoljeni su samo JPG i PNG.`;
+      if (f.size > MAX_IMG_BYTES)
+        return `"${f.name}" je prevelika. Maksimalna veličina je 5 MB.`;
+    }
+    return null;
+  }
+
+  function validateTitle(val: string): string | null {
+    const v = val.trim();
+    if (v.length > 0 && v.length < 3) return "Naslov mora imati najmanje 3 karaktera.";
+    if (v.length > 100) return "Naslov ne sme biti duži od 100 karaktera.";
+    if (FORBIDDEN_TITLE_CHARS.test(v)) return `Naslov ne sme sadržati sledeće karaktere: / \\ : * ? " < > |`;
+    if (v.length > 0 && toSlugClient(v) === "") return "Naslov mora sadržati bar jedno slovo ili broj.";
+    return null;
+  }
+
+  function toSlugClient(title: string): string {
+    return title.toLowerCase()
+      .replace(/[čć]/g, "c").replace(/š/g, "s").replace(/ž/g, "z").replace(/đ/g, "dj")
+      .replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "").replace(/-+/g, "-").replace(/^-|-$/g, "");
+  }
+
+  const blogCanSave = titleVal.trim().length >= 3 && !titleError && textVal.trim().length >= 20 && dateVal !== "" && hasImage && !imageFileError && !galleryFileError && heroLayout !== "";
 
   // Validacija obaveznih polja (clanovi)
   const [clanNameVal,  setClanNameVal]  = useState("");
@@ -269,11 +306,13 @@ export default function AdminPage() {
   async function openEdit(item: BlogItem) {
     setEditLoading(true);
     setEditStatus(null);
+    setEditTitleError(null);
+    setEditTextError(null);
     setView("edit");
     try {
       const res  = await fetch(`/api/admin/blog?folder=${encodeURIComponent(item.folder)}&slug=${encodeURIComponent(item.slug)}`);
       const data = await res.json();
-      setEditData(data);
+      setEditData({ ...data, arhivirano: data.arhivirano ?? false });
     } catch {
       setEditStatus({ ok: false, msg: "Greška pri učitavanju bloga." });
     } finally {
@@ -283,6 +322,9 @@ export default function AdminPage() {
 
   async function handleEditSave() {
     if (!editData) return;
+    const titleErr = validateTitle(editData.title);
+    if (titleErr) { setEditTitleError(titleErr); setEditStatus({ ok: false, msg: titleErr }); return; }
+    if (editData.text.trim().length < 20) { setEditTextError("Tekst mora imati najmanje 20 karaktera."); setEditStatus({ ok: false, msg: "Tekst mora imati najmanje 20 karaktera." }); return; }
     setEditSaving(true);
     setEditStatus(null);
     try {
@@ -356,11 +398,16 @@ export default function AdminPage() {
     if (bioRef.current)  bioRef.current.value  = "";
     setTags([]);
     setHeroLayout("");
+    setArhivirano(false);
     setIzvor("");
     setTitleVal("");
     setTextVal("");
     setDateVal(today);
     setHasImage(false);
+    setImageFileError(null);
+    setGalleryFileError(null);
+    setTitleError(null);
+    setTextError(null);
     setClanNameVal("");
     setClanBioVal("");
     setClanHasImage(false);
@@ -398,6 +445,34 @@ export default function AdminPage() {
 
         if (!title) { setStatus({ ok: false, msg: "Naslov je obavezan." }); return; }
 
+        const titleErr = validateTitle(title);
+        if (titleErr) { setTitleError(titleErr); setStatus({ ok: false, msg: titleErr }); return; }
+
+        if (text.length < 20) { setTextError("Tekst mora imati najmanje 20 karaktera."); setStatus({ ok: false, msg: "Tekst mora imati najmanje 20 karaktera." }); return; }
+
+        // Provera duplikata (klijentska — ako su blogovi učitani)
+        if (blogItems.length > 0) {
+          const newSlug = toSlugClient(title);
+          if (blogItems.some((b) => b.slug === newSlug)) {
+            setStatus({ ok: false, msg: `Blog sa naslovom "${title}" već postoji.` });
+            return;
+          }
+        }
+
+        const ALLOWED = ["image/jpeg", "image/png"];
+        const MAX_BYTES = 5 * 1024 * 1024;
+        const allFiles = [...(mainImage ? [mainImage] : []), ...galleryFiles];
+        for (const f of allFiles) {
+          if (!ALLOWED.includes(f.type)) {
+            setStatus({ ok: false, msg: `Slika "${f.name}" nije dozvoljen format. Dozvoljeni su samo JPG i PNG.` });
+            return;
+          }
+          if (f.size > MAX_BYTES) {
+            setStatus({ ok: false, msg: `Slika "${f.name}" je prevelika (max 5 MB).` });
+            return;
+          }
+        }
+
         const fd = new FormData();
         fd.append("title", title);
         fd.append("author", author);
@@ -405,6 +480,7 @@ export default function AdminPage() {
         fd.append("text", text);
         fd.append("heroLayout", heroLayout);
         fd.append("tags", JSON.stringify(tags));
+        fd.append("arhivirano", arhivirano ? "true" : "false");
         if (mainImage) fd.append("mainImage", mainImage);
         galleryFiles.forEach((f) => fd.append("gallery", f));
 
@@ -486,7 +562,10 @@ export default function AdminPage() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ folder: item.folder, slug: item.slug }),
           });
-          if (res.ok) setDeleteItems((prev) => prev.filter((b) => b.slug !== item.slug));
+          if (res.ok) {
+            setDeleteItems((prev) => prev.filter((b) => b.slug !== item.slug));
+            setBlogItems((prev) => prev.filter((b) => b.slug !== item.slug));
+          }
         } else {
           const getRes = await fetch(`/api/admin/blog?folder=${encodeURIComponent(item.folder)}&slug=${encodeURIComponent(item.slug)}`);
           const blogData = await getRes.json();
@@ -497,6 +576,7 @@ export default function AdminPage() {
             body: JSON.stringify({ ...blogData, arhivirano }),
           });
           setDeleteItems((prev) => prev.map((b) => b.slug === item.slug ? { ...b, arhivirano } : b));
+          setBlogItems((prev) => prev.map((b) => b.slug === item.slug ? { ...b, arhivirano } : b));
         }
       } else {
         const item = modal.item;
@@ -888,7 +968,22 @@ export default function AdminPage() {
                     </div>
                     <div className="col-span-2 hidden sm:block text-sm text-gray-500">{item.date || "—"}</div>
                     <div className="col-span-3 hidden md:block text-sm text-gray-500 truncate">{item.author || "—"}</div>
-                    <div className="col-span-2 flex justify-end">
+                    <div className="col-span-2 flex justify-end gap-2">
+                      {item.arhivirano ? (
+                        <button
+                          onClick={() => setModal({ type: "vrati", kind: "blog", item })}
+                          className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition-colors whitespace-nowrap"
+                        >
+                          Vrati
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => setModal({ type: "arhiviraj", kind: "blog", item })}
+                          className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors whitespace-nowrap"
+                        >
+                          Arhiviraj
+                        </button>
+                      )}
                       <button
                         onClick={() => openEdit(item)}
                         className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#e8f0fb] text-[#0056b3] hover:bg-[#0056b3] hover:text-white transition-colors"
@@ -1293,18 +1388,34 @@ export default function AdminPage() {
                         <input
                           type="text"
                           value={editData.title}
-                          onChange={(e) => setEditData((p) => p && ({ ...p, title: e.target.value }))}
-                          className={inputCls}
+                          maxLength={100}
+                          className={inputCls + (editTitleError ? " !border-red-400 !ring-red-300" : "")}
+                          onChange={(e) => {
+                            setEditData((p) => p && ({ ...p, title: e.target.value }));
+                            setEditTitleError(validateTitle(e.target.value));
+                          }}
                         />
+                        <div className="flex justify-between mt-1">
+                          {editTitleError
+                            ? <p className="text-xs text-red-500">{editTitleError}</p>
+                            : <span />
+                          }
+                          <p className={`text-xs ml-auto ${editData.title.length > 90 ? "text-amber-500" : "text-gray-400"}`}>{editData.title.length}/100</p>
+                        </div>
                       </div>
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-1.5">Tekst <span className="text-red-400">*</span></label>
                         <textarea
                           rows={18}
                           value={editData.text}
-                          onChange={(e) => setEditData((p) => p && ({ ...p, text: e.target.value }))}
-                          className={textareaCls}
+                          className={textareaCls + (editTextError ? " !border-red-400 !ring-red-300" : "")}
+                          onChange={(e) => {
+                            setEditData((p) => p && ({ ...p, text: e.target.value }));
+                            if (e.target.value.trim().length >= 20) setEditTextError(null);
+                          }}
+                          onBlur={(e) => { if (e.target.value.trim().length > 0 && e.target.value.trim().length < 20) setEditTextError("Tekst mora imati najmanje 20 karaktera."); }}
                         />
+                        {editTextError && <p className="mt-1 text-xs text-red-500">{editTextError}</p>}
                       </div>
                     </div>
 
@@ -1312,6 +1423,16 @@ export default function AdminPage() {
                     <div className="w-full xl:w-72 2xl:w-80 flex-shrink-0 space-y-4">
                       <div className="bg-white rounded-xl border border-gray-100 p-5 space-y-4">
                         <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Detalji</p>
+                        <label className="flex items-center gap-3 cursor-pointer select-none group">
+                          <input
+                            type="checkbox"
+                            checked={editData.arhivirano}
+                            onChange={(e) => setEditData((p) => p && ({ ...p, arhivirano: e.target.checked }))}
+                            className="w-4 h-4 rounded border-gray-300 text-[#0056b3] accent-[#0056b3] cursor-pointer"
+                          />
+                          <span className="text-sm font-semibold text-gray-700">Arhivirano</span>
+                          {editData.arhivirano && <span className="text-xs text-amber-600 font-medium">— neće biti vidljivo</span>}
+                        </label>
                         <div>
                           <label className="block text-sm font-semibold text-gray-700 mb-1.5">Autor</label>
                           <input
@@ -1421,7 +1542,7 @@ export default function AdminPage() {
                     </button>
                     <button
                       onClick={handleEditSave}
-                      disabled={editSaving || !editData.title.trim() || !editData.text.trim() || !editData.date}
+                      disabled={editSaving || editData.title.trim().length < 3 || !!editTitleError || editData.text.trim().length < 20 || !editData.date}
                       className="px-6 py-2.5 bg-[#0056b3] text-white text-sm font-bold rounded-lg hover:bg-[#003d80] transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
                     >
                       {editSaving ? "Čuvanje..." : "Sačuvaj izmene"}
@@ -1446,7 +1567,21 @@ export default function AdminPage() {
                       <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                         Naslov <span className="text-red-400">*</span>
                       </label>
-                      <input ref={titleRef} type="text" placeholder="Naslov blog posta..." className={inputCls} onChange={(e) => setTitleVal(e.target.value)} />
+                      <input
+                        ref={titleRef}
+                        type="text"
+                        placeholder="Naslov blog posta..."
+                        maxLength={100}
+                        className={inputCls + (titleError ? " !border-red-400 !ring-red-300" : "")}
+                        onChange={(e) => { setTitleVal(e.target.value); setTitleError(validateTitle(e.target.value)); }}
+                      />
+                      <div className="flex justify-between mt-1">
+                        {titleError
+                          ? <p className="text-xs text-red-500">{titleError}</p>
+                          : <span />
+                        }
+                        <p className={`text-xs ml-auto ${titleVal.length > 90 ? "text-amber-500" : "text-gray-400"}`}>{titleVal.length}/100</p>
+                      </div>
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-1.5">Tekst <span className="text-red-400">*</span></label>
@@ -1454,9 +1589,11 @@ export default function AdminPage() {
                         ref={bioRef}
                         rows={18}
                         placeholder="Sadržaj blog posta..."
-                        className={textareaCls}
-                        onChange={(e) => setTextVal(e.target.value)}
+                        className={textareaCls + (textError ? " !border-red-400 !ring-red-300" : "")}
+                        onChange={(e) => { setTextVal(e.target.value); if (e.target.value.trim().length >= 20) setTextError(null); }}
+                        onBlur={(e) => { if (e.target.value.trim().length > 0 && e.target.value.trim().length < 20) setTextError("Tekst mora imati najmanje 20 karaktera."); }}
                       />
+                      {textError && <p className="mt-1 text-xs text-red-500">{textError}</p>}
                     </div>
                   </div>
 
@@ -1466,6 +1603,16 @@ export default function AdminPage() {
                     {/* Osnovno */}
                     <div className="bg-white rounded-xl border border-gray-100 p-5 space-y-4">
                       <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Detalji</p>
+                      <label className="flex items-center gap-3 cursor-pointer select-none group">
+                        <input
+                          type="checkbox"
+                          checked={arhivirano}
+                          onChange={(e) => setArhivirano(e.target.checked)}
+                          className="w-4 h-4 rounded border-gray-300 text-[#0056b3] accent-[#0056b3] cursor-pointer"
+                        />
+                        <span className="text-sm font-semibold text-gray-700">Arhivirano</span>
+                        {arhivirano && <span className="text-xs text-amber-600 font-medium">— neće biti vidljivo na sajtu</span>}
+                      </label>
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-1.5">Autor</label>
                         <input ref={authorRef} type="text" placeholder="Ime i prezime autora..." className={inputCls} />
@@ -1537,7 +1684,19 @@ export default function AdminPage() {
                             </div>
                           </div>
                         </div>
-                        <input ref={imageRef} type="file" accept="image/*" className={fileCls} onChange={(e) => setHasImage((e.target.files?.length ?? 0) > 0)} />
+                        <input
+                          ref={imageRef}
+                          type="file"
+                          accept=".jpg,.jpeg,.png"
+                          className={fileCls + (imageFileError ? " !border-red-400 !ring-red-300" : "")}
+                          onChange={(e) => {
+                            const files = Array.from(e.target.files ?? []);
+                            const err = validateImageFiles(files);
+                            setImageFileError(err);
+                            setHasImage(files.length > 0 && !err);
+                          }}
+                        />
+                        {imageFileError && <p className="mt-1.5 text-xs text-red-500">{imageFileError}</p>}
                       </div>
                       <div>
                         <div className="flex items-center gap-1.5 mb-1.5">
@@ -1552,7 +1711,19 @@ export default function AdminPage() {
                             </div>
                           </div>
                         </div>
-                        <input ref={galleryRef} type="file" accept="image/*" multiple className={fileCls} />
+                        <input
+                          ref={galleryRef}
+                          type="file"
+                          accept=".jpg,.jpeg,.png"
+                          multiple
+                          className={fileCls + (galleryFileError ? " !border-red-400 !ring-red-300" : "")}
+                          onChange={(e) => {
+                            const files = Array.from(e.target.files ?? []);
+                            const err = validateImageFiles(files);
+                            setGalleryFileError(err);
+                          }}
+                        />
+                        {galleryFileError && <p className="mt-1.5 text-xs text-red-500">{galleryFileError}</p>}
                       </div>
                     </div>
 

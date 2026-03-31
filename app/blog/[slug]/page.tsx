@@ -136,6 +136,22 @@ export default function BlogSlugPage({ params }: Props) {
                 <MDXRemote source={floatAfter} />
               </div>
             </>
+          ) : meta.image && !meta.noHero && meta.heroLayout === "float-3-4" ? (
+            <>
+              <div className="md:grid md:grid-cols-2 md:gap-8 mb-6 items-start">
+                <div className="relative rounded-xl overflow-hidden aspect-[3/4] mb-4 md:mb-0">
+                  <Img src={meta.image} alt={meta.title} fill className="object-cover" style={{ objectPosition: meta.heroObjectPosition ?? "center" }} priority />
+                </div>
+                {floatBefore && (
+                  <div className="prose max-w-none">
+                    <MDXRemote source={floatBefore} />
+                  </div>
+                )}
+              </div>
+              <div className="prose max-w-none w-full overflow-hidden">
+                <MDXRemote source={floatAfter} />
+              </div>
+            </>
           ) : meta.image && !meta.noHero && meta.heroLayout === "float" ? (
             <div className="mb-8 overflow-hidden">
               <div className="mb-4 md:float-left md:w-1/2 md:mr-8 md:mb-4">
