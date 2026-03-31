@@ -1674,11 +1674,7 @@ export default function AdminPage() {
                             onChange={(e) => setDogEditData((p) => p && ({ ...p, heroLayout: e.target.value }))}
                             className={inputCls}>
                             <option value="top">Landscape — slika gore, tekst ispod</option>
-                            <option value="landscape">Landscape (puna širina)</option>
                             <option value="float">Portret — slika levo, tekst teče oko nje</option>
-                            <option value="float-4-3">Levo (4:3)</option>
-                            <option value="float-3-4">Levo (3:4)</option>
-                            <option value="float-2-3">Levo (2:3 portret)</option>
                           </select>
                         </div>
                       </div>
@@ -1830,11 +1826,7 @@ export default function AdminPage() {
                             className={inputCls}
                           >
                             <option value="top">Landscape — slika gore, tekst ispod</option>
-                            <option value="landscape">Landscape (puna širina)</option>
                             <option value="float">Portret — slika levo, tekst teče oko nje</option>
-                            <option value="float-4-3">Levo (4:3)</option>
-                            <option value="float-3-4">Levo (3:4)</option>
-                            <option value="float-2-3">Levo (2:3 portret)</option>
                           </select>
                         </div>
                       </div>
@@ -2038,11 +2030,7 @@ export default function AdminPage() {
                         >
                           <option value="" disabled>Izaberi layout...</option>
                           <option value="top">Landscape — slika gore, tekst ispod</option>
-                          <option value="landscape">Landscape (puna širina)</option>
                           <option value="float">Portret — slika levo, tekst teče oko nje</option>
-                          <option value="float-4-3">Levo (4:3)</option>
-                          <option value="float-3-4">Levo (3:4)</option>
-                          <option value="float-2-3">Levo (2:3 portret)</option>
                         </select>
                       </div>
                     </div>
