@@ -142,7 +142,7 @@ export default function HomePage() {
             Svake godine obeležavamo Svetski dan dijabetesa kroz edukativne
             aktivnosti, besplatne preglede i javne manifestacije u Novom Sadu.
           </p>
-          <Link href="/vesti" className="btn-primary">
+          <Link href="/dogadjaji" className="btn-primary">
             Pogledaj naše aktivnosti
           </Link>
         </div>

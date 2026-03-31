@@ -1,10 +1,20 @@
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 const partners = [
-  { src: "/content/partneri/bpi.jpg", alt: "BPI", scale: 1.6 },
-  { src: "/content/partneri/idf.jpg", alt: "IDF", scale: 1.4 },
-  { src: "/content/partneri/plavi-krug.png", alt: "Plavi krug", scale: 1 },
-  { src: "/content/partneri/savez.png", alt: "Savez", scale: 2.1 },
+  { src: "/content/partneri/bpi.jpg",                  alt: "BPI",                        scale: 1.6 },
+  { src: "/content/partneri/idf.jpg",                  alt: "IDF",                        scale: 1.4 },
+  { src: "/content/partneri/plavi-krug.png",           alt: "Plavi krug",                 scale: 1   },
+  { src: "/content/partneri/savez.png",                alt: "Dijabetološki savez Srbije", scale: 2.1 },
+  { src: "/content/partneri/novonordisk.jpg",          alt: "Novo Nordisk",               scale: 1.2 },
+  { src: "/content/partneri/axiomq.jpg",               alt: "Axiomq",                     scale: 1.2 },
+  { src: "/content/partneri/barrycalebaut.jpg",        alt: "Barry Callebaut",            scale: 1.2 },
+  { src: "/content/partneri/ebers.jpg",                alt: "Ebers",                      scale: 1.6 },
+  { src: "/content/partneri/nurdor.jpg",               alt: "Nurdor",                     scale: 1.2 },
+  { src: "/content/partneri/rtv.jpg",                  alt: "RTV",                        scale: 1.2 },
+  { src: "/content/partneri/pozoriste-mladih.jpg",     alt: "Pozorište mladih",           scale: 1.2 },
+  { src: "/content/partneri/stetoskop.jpg",            alt: "Stetoskop",                  scale: 1.2 },
+  { src: "/content/partneri/vodickrozdijabetes.jpg",   alt: "Vodič kroz dijabetes",       scale: 1.2 },
+  { src: "/content/partneri/diabetno1.jpg",            alt: "Diabetno1",                  scale: 1.2 },
 ];
 
 export default function Footer() {
@@ -24,11 +34,12 @@ export default function Footer() {
                 style={{ height: "160px", width: "auto", objectFit: "contain", marginTop: "-25px" }}
               />
             </div>
-            <p className="text-gray-400 text-sm leading-relaxed max-w-sm">
-              Diaverzum Novi Sad je udruženje koje pruža podršku, edukaciju i
-              zajednicu svim osobama sa dijabetesom i njihovim porodicama u
-              Novom Sadu i okolini.
-            </p>
+            <div className="text-gray-400 text-sm leading-relaxed max-w-sm space-y-1">
+              <p className="font-semibold text-gray-300 uppercase tracking-wide text-xs">Udruženje osoba sa dijabetesom „Diaverzum"</p>
+              <p>Bulevar Oslobođenja 33, 21000 Novi Sad</p>
+              <p>Račun 160-6000001726236-74 kod Banca Intesa</p>
+              <p>PIB: 113746240 &nbsp;·&nbsp; Matični: 28362196</p>
+            </div>
             <div className="flex gap-3">
               <a
                 href="https://facebook.com"
@@ -69,12 +80,12 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Right — partneri */}
+          {/* Right — saradnici */}
           <div className="flex flex-col gap-4">
-            <p className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Partneri</p>
-            <div className="grid grid-cols-2 gap-4">
+            <p className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Saradnici</p>
+            <div className="grid grid-cols-5 gap-3">
               {partners.map((p) => (
-                <div key={p.alt} className="bg-white rounded-lg p-3 flex items-center justify-center overflow-hidden" style={{ width: "120px", height: "64px" }}>
+                <div key={p.alt} className="bg-white rounded-lg p-2 flex items-center justify-center overflow-hidden" style={{ width: "88px", height: "52px" }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={`${BASE}${p.src}`} alt={p.alt} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", transform: `scale(${p.scale})` }} />
                 </div>
