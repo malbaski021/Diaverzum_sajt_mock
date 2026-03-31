@@ -344,7 +344,7 @@ export async function POST(req: NextRequest) {
     }
     const folderName = title;
     const excerpt = text.slice(0, 160).replace(/\n/g, " ").trim();
-    const mdxContent = buildMdx(title, date, excerpt, author, tags, heroLayout) + text;
+    const mdxContent = buildMdx(title, date, excerpt, author, tags, heroLayout, arhivirano) + text;
 
     const allImages: { file: File; index: number }[] = [];
     if (mainImage && mainImage.size > 0) allImages.push({ file: mainImage, index: 1 });
