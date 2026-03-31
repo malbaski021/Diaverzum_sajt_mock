@@ -17,7 +17,7 @@ export default function JunioriPage() {
   return (
     <div>
       {/* Hero */}
-      <section className="bg-gradient-to-br from-brand-blue to-[#003d80] text-white">
+      <section className="bg-gradient-to-br from-[#00adef] to-[#0078c8] text-white">
         <div className="container-max px-4 py-16 flex flex-col items-center text-center gap-6">
           <div style={{ height: "140px", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
