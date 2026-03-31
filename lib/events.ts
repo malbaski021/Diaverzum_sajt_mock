@@ -18,7 +18,7 @@ function getImages(slug: string): string[] {
     process.cwd(),
     "public",
     "content",
-    "events",
+    "dogadjaji",
     slug
   );
   if (!fs.existsSync(publicDir)) return [];
@@ -30,7 +30,7 @@ function getImages(slug: string): string[] {
       const nb = parseInt(b);
       return isNaN(na) || isNaN(nb) ? a.localeCompare(b) : na - nb;
     })
-    .map((f) => `/content/events/${slug}/${f}`);
+    .map((f) => `/content/dogadjaji/${slug}/${f}`);
 }
 
 export function getAllEvents(): EventData[] {

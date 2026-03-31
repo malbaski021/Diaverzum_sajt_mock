@@ -23,7 +23,7 @@ const fileCls =
 
 // --- Tipovi ---
 
-type Section = "vesti" | "blog" | "juniori" | "clanovi";
+type Section = "vesti" | "dogadjaji" | "blog" | "juniori" | "clanovi";
 type View = "dashboard" | "overview" | "add" | "list" | "delete" | "edit";
 
 interface NavItem {
@@ -35,10 +35,11 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { id: "vesti",   label: "Vesti",   hasBackend: false, description: "Novosti i aktuelnosti",           addLabel: "Dodaj vest"    },
-  { id: "blog",    label: "Blog",    hasBackend: true,  description: "Blog postovi i priče",             addLabel: "Dodaj blog"    },
-  { id: "juniori", label: "Juniori", hasBackend: false, description: "Sadržaj za mlade dijabetičare",   addLabel: "Dodaj objavu"  },
-  { id: "clanovi", label: "Članovi", hasBackend: true,  description: "Upravljaj listom članova",        addLabel: "Dodaj člana"   },
+  { id: "vesti",     label: "Vesti",     hasBackend: false, description: "Novosti i aktuelnosti",           addLabel: "Dodaj vest"      },
+  { id: "dogadjaji", label: "Događaji",  hasBackend: true,  description: "Događaji i akcije udruženja",     addLabel: "Dodaj događaj"   },
+  { id: "blog",      label: "Blog",      hasBackend: true,  description: "Blog postovi i priče",             addLabel: "Dodaj blog"      },
+  { id: "juniori",   label: "Juniori",   hasBackend: false, description: "Sadržaj za mlade dijabetičare",   addLabel: "Dodaj objavu"    },
+  { id: "clanovi",   label: "Članovi",   hasBackend: true,  description: "Upravljaj listom članova",        addLabel: "Dodaj člana"     },
 ];
 
 // --- SVG Ikone ---
@@ -121,6 +122,13 @@ function IcoTrash() {
     </svg>
   );
 }
+function IcoCalendar() {
+  return (
+    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+    </svg>
+  );
+}
 function IcoHamburger() {
   return (
     <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24" aria-hidden="true">
@@ -131,11 +139,12 @@ function IcoHamburger() {
 
 function getIcon(section: Section | null) {
   switch (section) {
-    case "vesti":   return <IcoNewspaper />;
-    case "blog":    return <IcoPen />;
-    case "juniori": return <IcoStar />;
-    case "clanovi": return <IcoUsers />;
-    default:        return <IcoDashboard />;
+    case "vesti":     return <IcoNewspaper />;
+    case "dogadjaji": return <IcoCalendar />;
+    case "blog":      return <IcoPen />;
+    case "juniori":   return <IcoStar />;
+    case "clanovi":   return <IcoUsers />;
+    default:          return <IcoDashboard />;
   }
 }
 
@@ -211,6 +220,7 @@ export default function AdminPage() {
   const [deleteError,    setDeleteError]    = useState(false);
   const [modal, setModal] = useState<
     | { type: "arhiviraj" | "vrati" | "obrisi"; kind: "blog"; item: BlogItem }
+    | { type: "arhiviraj" | "vrati" | "obrisi"; kind: "dogadjaj"; item: BlogItem }
     | { type: "arhiviraj" | "vrati" | "obrisi"; kind: "clan"; item: ClanMember }
     | null
   >(null);
@@ -234,9 +244,30 @@ export default function AdminPage() {
   const [deleteClanError,   setDeleteClanError]   = useState(false);
   const [deleteClanSearch,  setDeleteClanSearch]  = useState("");
 
+  // Dogadjaji — lista
+  const [dogItems,    setDogItems]    = useState<BlogItem[]>([]);
+  const [dogLoading,  setDogLoading]  = useState(false);
+  const [dogError,    setDogError]    = useState(false);
+  const [dogSearch,   setDogSearch]   = useState("");
+
+  // Dogadjaji — edit
+  const [dogEditData,       setDogEditData]       = useState<BlogEditData | null>(null);
+  const [dogEditLoading,    setDogEditLoading]    = useState(false);
+  const [dogEditSaving,     setDogEditSaving]     = useState(false);
+  const [dogEditStatus,     setDogEditStatus]     = useState<{ ok: boolean; msg: string } | null>(null);
+  const [dogEditNewTag,     setDogEditNewTag]     = useState("");
+  const [dogEditTitleError, setDogEditTitleError] = useState<string | null>(null);
+  const [dogEditTextError,  setDogEditTextError]  = useState<string | null>(null);
+
+  // Dogadjaji — delete
+  const [deleteDogItems,   setDeleteDogItems]   = useState<BlogItem[]>([]);
+  const [deleteDogLoading, setDeleteDogLoading] = useState(false);
+  const [deleteDogError,   setDeleteDogError]   = useState(false);
+  const [deleteDogSearch,  setDeleteDogSearch]  = useState("");
+
   // Form state
   const [, setIzvor]               = useState("");
-  const [heroLayout, setHeroLayout]     = useState<"top" | "float" | "">("");
+  const [heroLayout, setHeroLayout]     = useState("");
   const [arhivirano, setArhivirano]     = useState(false);
   const [tags, setTags]                 = useState<string[]>([]);
   const [newTag, setNewTag]             = useState("");
@@ -282,7 +313,7 @@ export default function AdminPage() {
       .replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "").replace(/-+/g, "-").replace(/^-|-$/g, "");
   }
 
-  const blogCanSave = titleVal.trim().length >= 3 && !titleError && textVal.trim().length >= 20 && dateVal !== "" && hasImage && !imageFileError && !galleryFileError && heroLayout !== "";
+  const contentCanSave = titleVal.trim().length >= 3 && !titleError && textVal.trim().length >= 20 && dateVal !== "" && hasImage && !imageFileError && !galleryFileError && heroLayout !== "";
 
   // Validacija obaveznih polja (clanovi)
   const [clanNameVal,  setClanNameVal]  = useState("");
@@ -339,6 +370,42 @@ export default function AdminPage() {
     }
   }
 
+  async function openDogEdit(item: BlogItem) {
+    setDogEditLoading(true);
+    setDogEditStatus(null);
+    setDogEditTitleError(null);
+    setDogEditTextError(null);
+    setView("edit");
+    try {
+      const res  = await fetch(`/api/admin/dogadjaji?folder=${encodeURIComponent(item.folder)}&slug=${encodeURIComponent(item.slug)}`);
+      const data = await res.json();
+      setDogEditData({ ...data, arhivirano: data.arhivirano ?? false });
+    } catch {
+      setDogEditStatus({ ok: false, msg: "Greška pri učitavanju događaja." });
+    } finally {
+      setDogEditLoading(false);
+    }
+  }
+
+  async function handleDogEditSave() {
+    if (!dogEditData) return;
+    const titleErr = validateTitle(dogEditData.title);
+    if (titleErr) { setDogEditTitleError(titleErr); setDogEditStatus({ ok: false, msg: titleErr }); return; }
+    if (dogEditData.text.trim().length < 20) { setDogEditTextError("Tekst mora imati najmanje 20 karaktera."); setDogEditStatus({ ok: false, msg: "Tekst mora imati najmanje 20 karaktera." }); return; }
+    setDogEditSaving(true);
+    setDogEditStatus(null);
+    try {
+      const res  = await fetch("/api/admin/dogadjaji", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(dogEditData) });
+      const data = await res.json();
+      if (res.ok) setDogEditStatus({ ok: true, msg: "Događaj uspešno sačuvan!" });
+      else        setDogEditStatus({ ok: false, msg: data.error ?? "Greška pri čuvanju." });
+    } catch {
+      setDogEditStatus({ ok: false, msg: "Greška pri čuvanju." });
+    } finally {
+      setDogEditSaving(false);
+    }
+  }
+
   async function openClanEdit(item: ClanMember) {
     setClanEditLoading(true);
     setClanEditStatus(null);
@@ -388,6 +455,8 @@ export default function AdminPage() {
     setStatus(null);
     setModal(null);
     setMobileOpen(false);
+    setDogEditData(null);
+    setDogEditStatus(null);
   }
 
   function resetForm() {
@@ -435,7 +504,8 @@ export default function AdminPage() {
         if (res.ok) { setStatus({ ok: true, msg: "Član uspešno dodat!" }); resetForm(); }
         else         setStatus({ ok: false, msg: data.error ?? "Greška pri uploadu." });
 
-      } else if (activeSection === "blog") {
+      } else if (activeSection === "blog" || activeSection === "dogadjaji") {
+        const isDog = activeSection === "dogadjaji";
         const title        = titleRef.current?.value.trim()   ?? "";
         const author       = authorRef.current?.value.trim()  ?? "";
         const date         = dateRef.current?.value            ?? today;
@@ -450,11 +520,12 @@ export default function AdminPage() {
 
         if (text.length < 20) { setTextError("Tekst mora imati najmanje 20 karaktera."); setStatus({ ok: false, msg: "Tekst mora imati najmanje 20 karaktera." }); return; }
 
-        // Provera duplikata (klijentska — ako su blogovi učitani)
-        if (blogItems.length > 0) {
+        // Provera duplikata (klijentska)
+        const itemsToCheck = isDog ? dogItems : blogItems;
+        if (itemsToCheck.length > 0) {
           const newSlug = toSlugClient(title);
-          if (blogItems.some((b) => b.slug === newSlug)) {
-            setStatus({ ok: false, msg: `Blog sa naslovom "${title}" već postoji.` });
+          if (itemsToCheck.some((b) => b.slug === newSlug)) {
+            setStatus({ ok: false, msg: `${isDog ? "Događaj" : "Blog"} sa naslovom "${title}" već postoji.` });
             return;
           }
         }
@@ -484,9 +555,10 @@ export default function AdminPage() {
         if (mainImage) fd.append("mainImage", mainImage);
         galleryFiles.forEach((f) => fd.append("gallery", f));
 
-        const res  = await fetch("/api/admin/blog", { method: "POST", body: fd });
+        const endpoint = isDog ? "/api/admin/dogadjaji" : "/api/admin/blog";
+        const res  = await fetch(endpoint, { method: "POST", body: fd });
         const data = await res.json();
-        if (res.ok) { setStatus({ ok: true, msg: "Blog post uspešno dodat!" }); resetForm(); }
+        if (res.ok) { setStatus({ ok: true, msg: isDog ? "Događaj uspešno dodat!" : "Blog post uspešno dodat!" }); resetForm(); }
         else         setStatus({ ok: false, msg: data.error ?? "Greška pri uploadu." });
       }
     } catch {
@@ -526,6 +598,26 @@ export default function AdminPage() {
         .then((data) => setDeleteItems(data.items ?? []))
         .catch(() => setDeleteError(true))
         .finally(() => setDeleteLoading(false));
+    }
+    if (view === "list" && activeSection === "dogadjaji") {
+      setDogLoading(true);
+      setDogError(false);
+      setDogSearch("");
+      fetch("/api/admin/dogadjaji")
+        .then((r) => r.json())
+        .then((data) => setDogItems(data.items ?? []))
+        .catch(() => setDogError(true))
+        .finally(() => setDogLoading(false));
+    }
+    if (view === "delete" && activeSection === "dogadjaji") {
+      setDeleteDogLoading(true);
+      setDeleteDogError(false);
+      setDeleteDogSearch("");
+      fetch("/api/admin/dogadjaji")
+        .then((r) => r.json())
+        .then((data) => setDeleteDogItems(data.items ?? []))
+        .catch(() => setDeleteDogError(true))
+        .finally(() => setDeleteDogLoading(false));
     }
     if (view === "list" && activeSection === "clanovi") {
       setClanLoading(true);
@@ -577,6 +669,30 @@ export default function AdminPage() {
           });
           setDeleteItems((prev) => prev.map((b) => b.slug === item.slug ? { ...b, arhivirano } : b));
           setBlogItems((prev) => prev.map((b) => b.slug === item.slug ? { ...b, arhivirano } : b));
+        }
+      } else if (kind === "dogadjaj") {
+        const item = modal.item;
+        if (type === "obrisi") {
+          const res = await fetch("/api/admin/dogadjaji", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ folder: item.folder, slug: item.slug }),
+          });
+          if (res.ok) {
+            setDeleteDogItems((prev) => prev.filter((d) => d.slug !== item.slug));
+            setDogItems((prev) => prev.filter((d) => d.slug !== item.slug));
+          }
+        } else {
+          const getRes = await fetch(`/api/admin/dogadjaji?folder=${encodeURIComponent(item.folder)}&slug=${encodeURIComponent(item.slug)}`);
+          const dogData = await getRes.json();
+          const arhivirano = type === "arhiviraj";
+          await fetch("/api/admin/dogadjaji", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...dogData, arhivirano }),
+          });
+          setDeleteDogItems((prev) => prev.map((d) => d.slug === item.slug ? { ...d, arhivirano } : d));
+          setDogItems((prev) => prev.map((d) => d.slug === item.slug ? { ...d, arhivirano } : d));
         }
       } else {
         const item = modal.item;
@@ -674,6 +790,8 @@ export default function AdminPage() {
               key={item.id}
               onClick={() => navigate(item.id)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-left ${
+                item.id === "dogadjaji" ? "border-2 border-red-500" : ""
+              } ${
                 activeSection === item.id && view !== "dashboard"
                   ? "bg-[#e8f0fb] text-[#0056b3]"
                   : "text-gray-600 hover:bg-gray-50"
@@ -709,6 +827,7 @@ export default function AdminPage() {
                   else if (view === "list" || view === "delete") setView("overview");
                   else if (view === "edit") {
                     if (activeSection === "clanovi") { setView("list"); setClanEditData(null); setClanEditStatus(null); }
+                    else if (activeSection === "dogadjaji") { setView("list"); setDogEditData(null); setDogEditStatus(null); }
                     else { setView("list"); setEditData(null); setEditStatus(null); }
                   }
                   else navigate(null);
@@ -726,7 +845,7 @@ export default function AdminPage() {
                 {view === "add"      && navItem?.addLabel}
                 {view === "list"     && "Izmena sadržaja"}
                 {view === "delete"   && "Briši sadržaj"}
-                {view === "edit"     && (activeSection === "clanovi" ? (clanEditData?.name ?? "Uredi člana") : (editData?.title ?? "Uredi blog"))}
+                {view === "edit"     && (activeSection === "clanovi" ? (clanEditData?.name ?? "Uredi člana") : activeSection === "dogadjaji" ? (dogEditData?.title ?? "Uredi događaj") : (editData?.title ?? "Uredi blog"))}
               </h1>
               {view === "overview" && navItem && (
                 <p className="text-xs text-gray-400 mt-0.5">{navItem.description}</p>
@@ -740,8 +859,11 @@ export default function AdminPage() {
               {view === "delete" && (
                 <p className="text-xs text-gray-400 mt-0.5">Ukloni postojeće objave — {navItem?.label}</p>
               )}
-              {view === "edit" && editData && activeSection !== "clanovi" && (
+              {view === "edit" && editData && activeSection === "blog" && (
                 <p className="text-xs text-gray-400 mt-0.5">{editData.date || ""}{editData.author ? ` · ${editData.author}` : ""}</p>
+              )}
+              {view === "edit" && dogEditData && activeSection === "dogadjaji" && (
+                <p className="text-xs text-gray-400 mt-0.5">{dogEditData.date || ""}{dogEditData.author ? ` · ${dogEditData.author}` : ""}</p>
               )}
               {view === "edit" && clanEditData && activeSection === "clanovi" && (
                 <p className="text-xs text-gray-400 mt-0.5">Član</p>
@@ -843,7 +965,7 @@ export default function AdminPage() {
 
                 {/* Izmena sadržaja */}
                 {(() => {
-                  const canList = activeSection === "blog" || activeSection === "clanovi";
+                  const canList = activeSection === "blog" || activeSection === "dogadjaji" || activeSection === "clanovi";
                   return (
                     <button
                       onClick={() => canList && setView("list")}
@@ -876,7 +998,7 @@ export default function AdminPage() {
 
                 {/* Briši sadržaj */}
                 {(() => {
-                  const canDelete = activeSection === "blog" || activeSection === "clanovi";
+                  const canDelete = activeSection === "blog" || activeSection === "dogadjaji" || activeSection === "clanovi";
                   return (
                     <button
                       onClick={() => canDelete && setView("delete")}
@@ -1007,6 +1129,70 @@ export default function AdminPage() {
                 )}
               </div>
 
+            </div>
+          )}
+
+          {/* ---- LIST / IZMENA — DOGADJAJI ---- */}
+          {view === "list" && activeSection === "dogadjaji" && (
+            <div className="space-y-4">
+              <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 flex items-center gap-3">
+                <div className="relative flex-1">
+                  <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden="true">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                  </svg>
+                  <input
+                    type="text"
+                    value={dogSearch}
+                    onChange={(e) => setDogSearch(e.target.value)}
+                    placeholder="Pretraži po naslovu..."
+                    className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0056b3] focus:border-transparent transition"
+                  />
+                </div>
+                {dogSearch && (
+                  <button onClick={() => setDogSearch("")} className="text-xs text-gray-400 hover:text-gray-700 px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0">Obriši</button>
+                )}
+              </div>
+              <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                <div className="grid grid-cols-12 gap-4 px-5 py-3 bg-gray-50 border-b border-gray-100 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                  <div className="col-span-5">Naziv</div>
+                  <div className="col-span-2 hidden sm:block">Datum</div>
+                  <div className="col-span-3 hidden md:block">Autor</div>
+                  <div className="col-span-2 text-right">Akcija</div>
+                </div>
+                {dogLoading && [1, 2, 3].map((i) => (
+                  <div key={i} className="grid grid-cols-12 gap-4 px-5 py-4 border-b border-gray-50 items-center animate-pulse">
+                    <div className="col-span-5"><div className="h-3.5 bg-gray-100 rounded-full w-3/4" /></div>
+                    <div className="col-span-2 hidden sm:block"><div className="h-3 bg-gray-100 rounded-full" /></div>
+                    <div className="col-span-3 hidden md:block"><div className="h-3 bg-gray-100 rounded-full w-2/3" /></div>
+                    <div className="col-span-2 flex justify-end"><div className="h-7 w-16 bg-gray-100 rounded-lg" /></div>
+                  </div>
+                ))}
+                {!dogLoading && dogItems.filter((d) => d.title.toLowerCase().includes(dogSearch.toLowerCase())).map((item) => (
+                  <div key={item.slug} className="grid grid-cols-12 gap-4 px-5 py-4 border-b border-gray-50 items-center hover:bg-gray-50 transition-colors">
+                    <div className="col-span-5">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{item.title}</p>
+                      {item.excerpt && <p className="text-xs text-gray-400 truncate mt-0.5">{item.excerpt}</p>}
+                    </div>
+                    <div className="col-span-2 hidden sm:block text-sm text-gray-500">{item.date || "—"}</div>
+                    <div className="col-span-3 hidden md:block text-sm text-gray-500 truncate">{item.author || "—"}</div>
+                    <div className="col-span-2 flex justify-end gap-2">
+                      {item.arhivirano ? (
+                        <button onClick={() => setModal({ type: "vrati", kind: "dogadjaj", item })} className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition-colors whitespace-nowrap">Vrati</button>
+                      ) : (
+                        <button onClick={() => setModal({ type: "arhiviraj", kind: "dogadjaj", item })} className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors whitespace-nowrap">Arhiviraj</button>
+                      )}
+                      <button onClick={() => openDogEdit(item)} className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#e8f0fb] text-[#0056b3] hover:bg-[#0056b3] hover:text-white transition-colors">Izaberi</button>
+                    </div>
+                  </div>
+                ))}
+                {!dogLoading && !dogError && dogItems.filter((d) => d.title.toLowerCase().includes(dogSearch.toLowerCase())).length === 0 && (
+                  <div className="px-5 py-12 text-center">
+                    <div className="w-12 h-12 rounded-2xl bg-gray-100 text-gray-300 flex items-center justify-center mx-auto mb-3"><IcoList /></div>
+                    <p className="text-sm font-semibold text-gray-400">{dogSearch ? `Nema rezultata za "${dogSearch}"` : "Nema događaja"}</p>
+                    <p className="text-xs text-gray-400 mt-1">{dogSearch ? "Pokušaj drugi pojam za pretragu." : "Dodaj prvi događaj."}</p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -1175,6 +1361,68 @@ export default function AdminPage() {
                 )}
               </div>
 
+            </div>
+          )}
+
+          {/* ---- DELETE — DOGADJAJI ---- */}
+          {view === "delete" && activeSection === "dogadjaji" && (
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3.5">
+                <svg width="18" height="18" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" className="flex-shrink-0 mt-0.5" aria-hidden="true">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                <div>
+                  <p className="text-sm font-semibold text-amber-700">Pažnja — brisanje je nepovratno</p>
+                  <p className="text-xs text-amber-600 mt-0.5">Obrisani događaj i sve njegove slike ne mogu se povratiti. Svaka stavka zahteva potvrdu pre brisanja.</p>
+                </div>
+              </div>
+              <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 flex items-center gap-3">
+                <div className="relative flex-1">
+                  <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden="true">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                  </svg>
+                  <input type="text" value={deleteDogSearch} onChange={(e) => setDeleteDogSearch(e.target.value)} placeholder="Pretraži po naslovu..."
+                    className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0056b3] focus:border-transparent transition" />
+                </div>
+                {deleteDogSearch && <button onClick={() => setDeleteDogSearch("")} className="text-xs text-gray-400 hover:text-gray-700 px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0">Obriši</button>}
+              </div>
+              <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                <div className="grid grid-cols-12 gap-4 px-5 py-3 bg-gray-50 border-b border-gray-100 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                  <div className="col-span-5">Naziv</div>
+                  <div className="col-span-2 hidden sm:block">Datum</div>
+                  <div className="col-span-5 text-right">Akcija</div>
+                </div>
+                {deleteDogLoading && [1, 2, 3].map((i) => (
+                  <div key={i} className="grid grid-cols-12 gap-4 px-5 py-4 border-b border-gray-50 items-center animate-pulse">
+                    <div className="col-span-5"><div className="h-3.5 bg-gray-100 rounded-full w-3/4" /></div>
+                    <div className="col-span-2 hidden sm:block"><div className="h-3 bg-gray-100 rounded-full" /></div>
+                    <div className="col-span-5 flex justify-end gap-2"><div className="h-7 w-20 bg-gray-100 rounded-lg" /><div className="h-7 w-16 bg-red-50 rounded-lg" /></div>
+                  </div>
+                ))}
+                {!deleteDogLoading && deleteDogItems.filter((d) => d.title.toLowerCase().includes(deleteDogSearch.toLowerCase())).map((item) => (
+                  <div key={item.slug} className="grid grid-cols-12 gap-4 px-5 py-4 border-b border-gray-50 items-center hover:bg-gray-50 transition-colors">
+                    <div className="col-span-5">
+                      {item.arhivirano && <span className="inline-block text-[9px] font-bold bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full mb-1">Arhivirano</span>}
+                      <p className="text-sm font-semibold text-gray-900 truncate">{item.title}</p>
+                    </div>
+                    <div className="col-span-2 hidden sm:block text-sm text-gray-500">{item.date || "—"}</div>
+                    <div className="col-span-5 flex justify-end gap-2">
+                      {item.arhivirano ? (
+                        <button onClick={() => setModal({ type: "vrati", kind: "dogadjaj", item })} className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition-colors whitespace-nowrap">Vrati</button>
+                      ) : (
+                        <button onClick={() => setModal({ type: "arhiviraj", kind: "dogadjaj", item })} className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors whitespace-nowrap">Arhiviraj</button>
+                      )}
+                      <button onClick={() => setModal({ type: "obrisi", kind: "dogadjaj", item })} className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-500 hover:text-white transition-colors whitespace-nowrap">Obriši</button>
+                    </div>
+                  </div>
+                ))}
+                {!deleteDogLoading && !deleteDogError && deleteDogItems.filter((d) => d.title.toLowerCase().includes(deleteDogSearch.toLowerCase())).length === 0 && (
+                  <div className="px-5 py-12 text-center">
+                    <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-300 flex items-center justify-center mx-auto mb-3"><IcoTrash /></div>
+                    <p className="text-sm font-semibold text-gray-400">{deleteDogSearch ? `Nema rezultata za "${deleteDogSearch}"` : "Nema događaja"}</p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -1363,8 +1611,131 @@ export default function AdminPage() {
             </div>
           )}
 
+          {/* ---- EDIT DOGADJAJI ---- */}
+          {view === "edit" && activeSection === "dogadjaji" && (
+            <div className="flex flex-col gap-4">
+              {dogEditLoading && (
+                <div className="flex items-center gap-2 text-sm text-gray-400 py-4">
+                  <svg className="animate-spin" width="16" height="16" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+                  </svg>
+                  Učitavanje sadržaja...
+                </div>
+              )}
+              {!dogEditLoading && dogEditData && (
+                <>
+                  <div className="flex flex-col xl:flex-row gap-4 xl:items-start">
+                    <div className="flex-1 min-w-0 bg-white rounded-xl border border-gray-100 p-6 space-y-5">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Naziv <span className="text-red-400">*</span></label>
+                        <input type="text" value={dogEditData.title} maxLength={100}
+                          className={inputCls + (dogEditTitleError ? " !border-red-400 !ring-red-300" : "")}
+                          onChange={(e) => { setDogEditData((p) => p && ({ ...p, title: e.target.value })); setDogEditTitleError(validateTitle(e.target.value)); }} />
+                        <div className="flex justify-between mt-1">
+                          {dogEditTitleError ? <p className="text-xs text-red-500">{dogEditTitleError}</p> : <span />}
+                          <p className={`text-xs ml-auto ${dogEditData.title.length > 90 ? "text-amber-500" : "text-gray-400"}`}>{dogEditData.title.length}/100</p>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Tekst <span className="text-red-400">*</span></label>
+                        <textarea rows={18} value={dogEditData.text}
+                          className={textareaCls + (dogEditTextError ? " !border-red-400 !ring-red-300" : "")}
+                          onChange={(e) => { setDogEditData((p) => p && ({ ...p, text: e.target.value })); if (e.target.value.trim().length >= 20) setDogEditTextError(null); }}
+                          onBlur={(e) => { if (e.target.value.trim().length > 0 && e.target.value.trim().length < 20) setDogEditTextError("Tekst mora imati najmanje 20 karaktera."); }} />
+                        {dogEditTextError && <p className="mt-1 text-xs text-red-500">{dogEditTextError}</p>}
+                      </div>
+                    </div>
+                    <div className="w-full xl:w-72 2xl:w-80 flex-shrink-0 space-y-4">
+                      <div className="bg-white rounded-xl border border-gray-100 p-5 space-y-4">
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Detalji</p>
+                        <label className="flex items-center gap-3 cursor-pointer select-none group">
+                          <input type="checkbox" checked={dogEditData.arhivirano}
+                            onChange={(e) => setDogEditData((p) => p && ({ ...p, arhivirano: e.target.checked }))}
+                            className="w-4 h-4 rounded border-gray-300 text-[#0056b3] accent-[#0056b3] cursor-pointer" />
+                          <span className="text-sm font-semibold text-gray-700">Arhivirano</span>
+                          {dogEditData.arhivirano && <span className="text-xs text-amber-600 font-medium">— neće biti vidljivo</span>}
+                        </label>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1.5">Autor</label>
+                          <input type="text" value={dogEditData.author}
+                            onChange={(e) => setDogEditData((p) => p && ({ ...p, author: e.target.value }))}
+                            className={inputCls} />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1.5">Datum objave <span className="text-red-400">*</span></label>
+                          <input type="date" value={dogEditData.date}
+                            onChange={(e) => setDogEditData((p) => p && ({ ...p, date: e.target.value }))}
+                            className={inputCls} />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1.5">Layout glavne slike <span className="text-red-400">*</span></label>
+                          <select value={dogEditData.heroLayout}
+                            onChange={(e) => setDogEditData((p) => p && ({ ...p, heroLayout: e.target.value }))}
+                            className={inputCls}>
+                            <option value="top">Landscape — slika gore, tekst ispod</option>
+                            <option value="landscape">Landscape (puna širina)</option>
+                            <option value="float">Portret — slika levo, tekst teče oko nje</option>
+                            <option value="float-4-3">Levo (4:3)</option>
+                            <option value="float-3-4">Levo (3:4)</option>
+                            <option value="float-2-3">Levo (2:3 portret)</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-xl border border-gray-100 p-5 space-y-3">
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Tagovi</p>
+                    <div className="flex flex-wrap gap-2">
+                      {EXISTING_TAGS.map((tag) => (
+                        <button key={tag} type="button"
+                          onClick={() => setDogEditData((p) => p && ({ ...p, tags: p.tags.includes(tag) ? p.tags.filter((t) => t !== tag) : [...p.tags, tag] }))}
+                          className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${dogEditData.tags.includes(tag) ? "bg-[#0056b3] text-white border-[#0056b3]" : "bg-white text-gray-600 border-gray-200 hover:border-[#0056b3]"}`}>
+                          {tag}
+                        </button>
+                      ))}
+                      {dogEditData.tags.filter((t) => !EXISTING_TAGS.includes(t)).map((tag) => (
+                        <span key={tag} className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-full bg-[#0056b3] text-white border border-[#0056b3]">
+                          {tag}
+                          <button type="button" onClick={() => setDogEditData((p) => p && ({ ...p, tags: p.tags.filter((t) => t !== tag) }))} className="hover:opacity-70 ml-0.5" aria-label={`Ukloni tag ${tag}`}>✕</button>
+                        </span>
+                      ))}
+                    </div>
+                    <div className="flex gap-2 pt-1 max-w-xs">
+                      <input type="text" value={dogEditNewTag} onChange={(e) => setDogEditNewTag(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); const t = dogEditNewTag.trim().toLowerCase(); if (t && !dogEditData.tags.includes(t)) setDogEditData((p) => p && ({ ...p, tags: [...p.tags, t] })); setDogEditNewTag(""); } }}
+                        placeholder="Novi tag..." className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 bg-white focus:outline-none focus:ring-2 focus:ring-[#0056b3] focus:border-transparent transition" />
+                      <button type="button" onClick={() => { const t = dogEditNewTag.trim().toLowerCase(); if (t && !dogEditData.tags.includes(t)) setDogEditData((p) => p && ({ ...p, tags: [...p.tags, t] })); setDogEditNewTag(""); }}
+                        className="px-4 py-2 bg-[#e8f0fb] text-[#0056b3] text-sm font-semibold rounded-lg hover:bg-[#0056b3] hover:text-white transition-colors">Dodaj</button>
+                    </div>
+                  </div>
+                  <div className="bg-white rounded-xl border border-gray-100 px-5 py-4 flex items-center gap-3">
+                    {dogEditStatus && (
+                      <div className={`flex items-center gap-2 flex-1 px-4 py-2.5 rounded-lg text-sm font-medium ${dogEditStatus.ok ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
+                        {dogEditStatus.ok ? (
+                          <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
+                        ) : (
+                          <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        )}
+                        {dogEditStatus.msg}
+                      </div>
+                    )}
+                    {!dogEditStatus && <div className="flex-1" />}
+                    <button onClick={() => { setView("list"); setDogEditData(null); setDogEditStatus(null); }}
+                      className="px-5 py-2.5 border border-gray-200 text-sm font-semibold text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">Otkaži</button>
+                    <button onClick={handleDogEditSave}
+                      disabled={dogEditSaving || dogEditData.title.trim().length < 3 || !!dogEditTitleError || dogEditData.text.trim().length < 20 || !dogEditData.date}
+                      className="px-6 py-2.5 bg-[#0056b3] text-white text-sm font-bold rounded-lg hover:bg-[#003d80] transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-sm">
+                      {dogEditSaving ? "Čuvanje..." : "Sačuvaj izmene"}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
           {/* ---- EDIT BLOG ---- */}
-          {view === "edit" && activeSection !== "clanovi" && (
+          {view === "edit" && activeSection === "blog" && (
             <div className="flex flex-col gap-4">
               {editLoading && (
                 <div className="flex items-center gap-2 text-sm text-gray-400 py-4">
@@ -1459,7 +1830,11 @@ export default function AdminPage() {
                             className={inputCls}
                           >
                             <option value="top">Landscape — slika gore, tekst ispod</option>
+                            <option value="landscape">Landscape (puna širina)</option>
                             <option value="float">Portret — slika levo, tekst teče oko nje</option>
+                            <option value="float-4-3">Levo (4:3)</option>
+                            <option value="float-3-4">Levo (3:4)</option>
+                            <option value="float-2-3">Levo (2:3 portret)</option>
                           </select>
                         </div>
                       </div>
@@ -1557,8 +1932,8 @@ export default function AdminPage() {
           {view === "add" && activeSection && (
             <div className="flex flex-col gap-4">
 
-              {/* === BLOG FORMA === */}
-              {activeSection === "blog" && (
+              {/* === BLOG / DOGADJAJI FORMA === */}
+              {(activeSection === "blog" || activeSection === "dogadjaji") && (
                 <div className="flex flex-col xl:flex-row gap-4 xl:items-start">
 
                   {/* Leva kolona — glavni sadržaj */}
@@ -1658,12 +2033,16 @@ export default function AdminPage() {
                       </div>
                         <select
                           value={heroLayout}
-                          onChange={(e) => setHeroLayout(e.target.value as "top" | "float")}
+                          onChange={(e) => setHeroLayout(e.target.value)}
                           className={inputCls}
                         >
                           <option value="" disabled>Izaberi layout...</option>
                           <option value="top">Landscape — slika gore, tekst ispod</option>
+                          <option value="landscape">Landscape (puna širina)</option>
                           <option value="float">Portret — slika levo, tekst teče oko nje</option>
+                          <option value="float-4-3">Levo (4:3)</option>
+                          <option value="float-3-4">Levo (3:4)</option>
+                          <option value="float-2-3">Levo (2:3 portret)</option>
                         </select>
                       </div>
                     </div>
@@ -1706,7 +2085,10 @@ export default function AdminPage() {
                               i
                             </button>
                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-gray-900 text-white text-xs rounded-xl px-3 py-2.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 leading-relaxed shadow-lg">
-                              Moguće je uploadovati više slika. <span className="text-amber-300 font-semibold">Napomena:</span> ove slike neće biti automatski vidljive na stranici. Za njihovo prikazivanje, moderator mora da izmeni izgled stranice u kodu.
+                              {activeSection === "dogadjaji"
+                                ? "Moguće je uploadovati više slika. Ako ima više od jedne slike, automatski se prikazuje galerija ispod teksta."
+                                : <>Moguće je uploadovati više slika. <span className="text-amber-300 font-semibold">Napomena:</span> ove slike neće biti automatski vidljive na stranici. Za njihovo prikazivanje, moderator mora da izmeni izgled stranice u kodu.</>
+                              }
                               <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
                             </div>
                           </div>
@@ -1732,7 +2114,7 @@ export default function AdminPage() {
               )}
 
               {/* Tagovi — puna širina, ispod dvocolonog layouta */}
-              {activeSection === "blog" && (
+              {(activeSection === "blog" || activeSection === "dogadjaji") && (
                 <div className="bg-white rounded-xl border border-gray-100 p-5 space-y-3">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Tagovi</p>
                   <div className="flex flex-wrap gap-2">
@@ -1867,7 +2249,7 @@ export default function AdminPage() {
                 </button>
                 <button
                   onClick={handleUpload}
-                  disabled={loading || (activeSection === "blog" && !blogCanSave) || (activeSection === "clanovi" && !clanCanSave)}
+                  disabled={loading || ((activeSection === "blog" || activeSection === "dogadjaji") && !contentCanSave) || (activeSection === "clanovi" && !clanCanSave)}
                   className="px-6 py-2.5 bg-[#0056b3] text-white text-sm font-bold rounded-lg hover:bg-[#003d80] transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
                 >
                   {loading ? "Čuvanje..." : "Sačuvaj"}
@@ -1912,14 +2294,16 @@ export default function AdminPage() {
               <div className="flex-1 min-w-0">
                 {(() => {
                   const isClan = modal.kind === "clan";
-                  const label = isClan ? modal.item.name : modal.item.title;
-                  const noun = isClan ? "Član" : "Blog";
+                  const isDog  = modal.kind === "dogadjaj";
+                  const label  = isClan ? modal.item.name : modal.item.title;
+                  const noun   = isClan ? "Član" : isDog ? "Događaj" : "Blog";
+                  const objType = isClan ? "člana" : isDog ? "događaj" : "blog post";
                   return (
                     <>
                       <p id="modal-title" className="text-sm font-bold text-gray-900">
-                        {modal.type === "obrisi" && `Obriši ${isClan ? "člana" : "blog post"}`}
-                        {modal.type === "arhiviraj" && `Arhiviraj ${isClan ? "člana" : "blog post"}`}
-                        {modal.type === "vrati" && `Vrati ${isClan ? "člana" : "blog post"}`}
+                        {modal.type === "obrisi"   && `Obriši ${objType}`}
+                        {modal.type === "arhiviraj" && `Arhiviraj ${objType}`}
+                        {modal.type === "vrati"     && `Vrati ${objType}`}
                       </p>
                       <p className="text-xs text-gray-500 mt-1 leading-relaxed">
                         {modal.type === "obrisi" && (
