@@ -1897,6 +1897,7 @@ export default function AdminPage() {
                                 className={`relative aspect-square rounded-lg overflow-hidden border-2 bg-gray-50 transition-colors ${isMain ? "border-[#0056b3]" : "border-gray-200 hover:border-gray-400"}`}
                                 title={isMain ? "Glavna slika" : "Postavi kao glavnu"}
                               >
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img src={src} alt="" className="w-full h-full object-cover" />
                                 {isMain && (
                                   <span className="absolute bottom-0 left-0 right-0 text-center text-[10px] font-bold text-white bg-[#0056b3] py-0.5">Glavna</span>
@@ -1910,7 +1911,7 @@ export default function AdminPage() {
                                     e.stopPropagation();
                                     setDogDeleteSelected((prev) => {
                                       const next = new Set(prev);
-                                      next.has(src) ? next.delete(src) : next.add(src);
+                                      if (next.has(src)) { next.delete(src); } else { next.add(src); }
                                       return next;
                                     });
                                     setDogDeleteStatus(null);
@@ -2147,6 +2148,7 @@ export default function AdminPage() {
                                 className={`relative aspect-square rounded-lg overflow-hidden border-2 bg-gray-50 transition-colors ${isMain ? "border-[#0056b3]" : "border-gray-200 hover:border-gray-400"}`}
                                 title={isMain ? "Glavna slika" : "Postavi kao glavnu"}
                               >
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img src={src} alt="" className="w-full h-full object-cover" />
                                 {isMain && (
                                   <span className="absolute bottom-0 left-0 right-0 text-center text-[10px] font-bold text-white bg-[#0056b3] py-0.5">Glavna</span>
@@ -2161,7 +2163,7 @@ export default function AdminPage() {
                                     e.stopPropagation();
                                     setEditDeleteSelected((prev) => {
                                       const next = new Set(prev);
-                                      next.has(src) ? next.delete(src) : next.add(src);
+                                      if (next.has(src)) { next.delete(src); } else { next.add(src); }
                                       return next;
                                     });
                                     setEditDeleteStatus(null);
