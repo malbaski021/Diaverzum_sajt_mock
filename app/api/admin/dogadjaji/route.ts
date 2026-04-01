@@ -31,6 +31,7 @@ function buildMdx(
   tags: string[],
   heroLayout: string,
   arhivirano: boolean = false,
+  image?: string,
 ): string {
   const lines = [
     `---`,
@@ -40,6 +41,7 @@ function buildMdx(
     `author: "${author.replace(/"/g, '\\"')}"`,
     `tags: ${JSON.stringify(tags)}`,
     `heroLayout: "${heroLayout}"`,
+    ...(image ? [`image: "${image}"`] : []),
     `arhivirano: ${arhivirano}`,
     `---`,
     ``,
@@ -50,6 +52,23 @@ function buildMdx(
 function enc(p: string): string { return p.split("/").map(encodeURIComponent).join("/"); }
 
 // --- GitHub helpers ---
+
+async function deleteGitHubFile(filePath: string, message: string) {
+  const sha = await getFileSha(filePath);
+  if (!sha) return;
+  await fetch(
+    `${GITHUB_API}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${filePath.split("/").map(encodeURIComponent).join("/")}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${GITHUB_TOKEN}`,
+        "Content-Type": "application/json",
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+      body: JSON.stringify({ message, sha, branch: GITHUB_BRANCH }),
+    }
+  );
+}
 
 async function getFileSha(filePath: string): Promise<string | null> {
   const res = await fetch(
@@ -171,6 +190,41 @@ export async function GET(req: NextRequest) {
     const folder = searchParams.get("folder");
     const slug   = searchParams.get("slug");
 
+    // --- Slike za galeriju ---
+    if (searchParams.get("images") === "1" && slug) {
+      const IMAGE_RE = /\.(png|jpg|jpeg|webp)$/i;
+
+      if (IS_LOCAL) {
+        const publicDir = path.join(ROOT, "public", "content", "dogadjaji", slug);
+        if (!fs.existsSync(publicDir)) return NextResponse.json({ images: [] });
+        const images = fs.readdirSync(publicDir)
+          .filter((f) => IMAGE_RE.test(f))
+          .sort((a, b) => {
+            const na = parseInt(a), nb = parseInt(b);
+            return isNaN(na) || isNaN(nb) ? a.localeCompare(b) : na - nb;
+          })
+          .map((f) => `/content/dogadjaji/${slug}/${f}`);
+        return NextResponse.json({ images });
+      }
+
+      if (!folder) return NextResponse.json({ images: [] });
+      const ghHeaders = { Authorization: `Bearer ${GITHUB_TOKEN}`, "X-GitHub-Api-Version": "2022-11-28" };
+      const res = await fetch(
+        `${GITHUB_API}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${enc(`content/dogadjaji/${folder}`)}?ref=${GITHUB_BRANCH}`,
+        { headers: ghHeaders }
+      );
+      if (!res.ok) return NextResponse.json({ images: [] });
+      const files: { name: string }[] = await res.json();
+      const images = files
+        .filter((f) => IMAGE_RE.test(f.name))
+        .sort((a, b) => {
+          const na = parseInt(a.name), nb = parseInt(b.name);
+          return isNaN(na) || isNaN(nb) ? a.name.localeCompare(b.name) : na - nb;
+        })
+        .map((f) => `/content/dogadjaji/${slug}/${f.name}`);
+      return NextResponse.json({ images });
+    }
+
     // --- Jedan događaj (za edit) ---
     if (folder && slug) {
       const mdxRelPath = `content/dogadjaji/${folder}/${slug}.mdx`;
@@ -182,7 +236,7 @@ export async function GET(req: NextRequest) {
         const fm  = parseFrontmatter(raw);
         const body = extractBody(raw);
         const tags = fm.tags ? JSON.parse(fm.tags.replace(/'/g, '"')) : [];
-        return NextResponse.json({ folder, slug, title: fm.title ?? "", date: fm.date ?? "", author: fm.author ?? "", heroLayout: fm.heroLayout ?? "top", tags, arhivirano: fm.arhivirano === "true", text: body });
+        return NextResponse.json({ folder, slug, title: fm.title ?? "", date: fm.date ?? "", author: fm.author ?? "", heroLayout: fm.heroLayout ?? "top", tags, arhivirano: fm.arhivirano === "true", image: fm.image ?? "", text: body });
       }
 
       // GitHub
@@ -194,7 +248,7 @@ export async function GET(req: NextRequest) {
       const fm  = parseFrontmatter(raw);
       const body = extractBody(raw);
       const tags = fm.tags ? JSON.parse(fm.tags.replace(/'/g, '"')) : [];
-      return NextResponse.json({ folder, slug, sha: fileData.sha, title: fm.title ?? "", date: fm.date ?? "", author: fm.author ?? "", heroLayout: fm.heroLayout ?? "top", tags, arhivirano: fm.arhivirano === "true", text: body });
+      return NextResponse.json({ folder, slug, sha: fileData.sha, title: fm.title ?? "", date: fm.date ?? "", author: fm.author ?? "", heroLayout: fm.heroLayout ?? "top", tags, arhivirano: fm.arhivirano === "true", image: fm.image ?? "", text: body });
     }
 
     // --- Lista svih događaja ---
@@ -232,17 +286,17 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ items });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: "Greška pri učitavanju." }, { status: 500 });
+    return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 });
   }
 }
 
 export async function PUT(req: NextRequest) {
   try {
-    const { folder, slug, title, author, date, text, heroLayout, tags, sha, arhivirano } = await req.json();
+    const { folder, slug, title, author, date, text, heroLayout, tags, sha, arhivirano, image } = await req.json();
     if (!folder || !slug || !title) return NextResponse.json({ error: "folder, slug i title su obavezni." }, { status: 400 });
 
     const excerpt    = (text ?? "").slice(0, 160).replace(/\n/g, " ").trim();
-    const mdxContent = buildMdx(title, date ?? "", excerpt, author ?? "", tags ?? [], heroLayout ?? "top", arhivirano ?? false) + (text ?? "");
+    const mdxContent = buildMdx(title, date ?? "", excerpt, author ?? "", tags ?? [], heroLayout ?? "top", arhivirano ?? false, image || undefined) + (text ?? "");
     const mdxRelPath = `content/dogadjaji/${folder}/${slug}.mdx`;
 
     if (IS_LOCAL) {
@@ -256,7 +310,7 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: "Greška pri čuvanju." }, { status: 500 });
+    return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 });
   }
 }
 
@@ -282,9 +336,32 @@ async function deleteGitHubFolder(folderPath: string, folderLabel: string) {
 
 export async function DELETE(req: NextRequest) {
   try {
-    const { folder, slug } = await req.json();
+    const { folder, slug, images } = await req.json();
     if (!folder || !slug) return NextResponse.json({ error: "folder i slug su obavezni." }, { status: 400 });
 
+    // --- Brisanje pojedinačnih slika ---
+    if (Array.isArray(images) && images.length > 0) {
+      const filenames = (images as string[]).map((p) => p.split("/").pop()).filter(Boolean) as string[];
+
+      if (IS_LOCAL) {
+        for (const filename of filenames) {
+          const pub = path.join(ROOT, "public", "content", "dogadjaji", slug, filename);
+          const cnt = path.join(ROOT, "content", "dogadjaji", folder, filename);
+          if (fs.existsSync(pub)) fs.unlinkSync(pub);
+          if (fs.existsSync(cnt)) fs.unlinkSync(cnt);
+        }
+        return NextResponse.json({ success: true });
+      }
+
+      for (const filename of filenames) {
+        const msg = `Admin: obriši sliku "${filename}" iz događaja "${slug}"`;
+        await deleteGitHubFile(`public/content/dogadjaji/${slug}/${filename}`, msg);
+        await deleteGitHubFile(`content/dogadjaji/${folder}/${filename}`, msg);
+      }
+      return NextResponse.json({ success: true });
+    }
+
+    // --- Brisanje celog događaja ---
     const contentFolder = `content/dogadjaji/${folder}`;
     const publicFolder  = `public/content/dogadjaji/${slug}`;
 
@@ -302,7 +379,88 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: "Greška pri brisanju." }, { status: 500 });
+    return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const formData = await req.formData();
+    const folder = (formData.get("folder") as string)?.trim();
+    const slug   = (formData.get("slug") as string)?.trim();
+    const galleryFiles = (formData.getAll("gallery") as File[]).filter((f) => f.size > 0);
+
+    if (!folder || !slug) return NextResponse.json({ error: "folder i slug su obavezni." }, { status: 400 });
+    if (galleryFiles.length === 0) return NextResponse.json({ error: "Nema slika za dodavanje." }, { status: 400 });
+
+    const ALLOWED_TYPES = ["image/jpeg", "image/png"];
+    const MAX_BYTES = 5 * 1024 * 1024;
+    for (const file of galleryFiles) {
+      if (!ALLOWED_TYPES.includes(file.type))
+        return NextResponse.json({ error: `Slika "${file.name}" nije dozvoljen format. Dozvoljeni su samo JPG i PNG.` }, { status: 400 });
+      if (file.size > MAX_BYTES)
+        return NextResponse.json({ error: `Slika "${file.name}" je prevelika (max 5 MB).` }, { status: 400 });
+    }
+
+    // Pronađi najveći postojeći indeks
+    let maxIndex = 0;
+
+    if (IS_LOCAL) {
+      const contentFolder = path.join(ROOT, `content/dogadjaji/${folder}`);
+      if (fs.existsSync(contentFolder)) {
+        for (const f of fs.readdirSync(contentFolder)) {
+          const m = f.match(/^(\d+)\.(jpg|jpeg|png)$/i);
+          if (m) maxIndex = Math.max(maxIndex, parseInt(m[1], 10));
+        }
+      }
+    } else {
+      const headers = { Authorization: `Bearer ${GITHUB_TOKEN}`, "X-GitHub-Api-Version": "2022-11-28" };
+      const res = await fetch(
+        `${GITHUB_API}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${enc(`content/dogadjaji/${folder}`)}?ref=${GITHUB_BRANCH}`,
+        { headers }
+      );
+      if (res.ok) {
+        const files: { name: string }[] = await res.json();
+        for (const f of files) {
+          const m = f.name.match(/^(\d+)\.(jpg|jpeg|png)$/i);
+          if (m) maxIndex = Math.max(maxIndex, parseInt(m[1], 10));
+        }
+      }
+    }
+
+    if (IS_LOCAL) {
+      for (let i = 0; i < galleryFiles.length; i++) {
+        const file = galleryFiles[i];
+        const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
+        const filename = `${maxIndex + 1 + i}.${ext}`;
+        const buffer = Buffer.from(await file.arrayBuffer());
+        localWrite(`content/dogadjaji/${folder}/${filename}`, buffer);
+        localWrite(`public/content/dogadjaji/${slug}/${filename}`, buffer);
+      }
+      return NextResponse.json({ success: true });
+    }
+
+    // GitHub
+    for (let i = 0; i < galleryFiles.length; i++) {
+      const file = galleryFiles[i];
+      const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
+      const filename = `${maxIndex + 1 + i}.${ext}`;
+      const base64 = Buffer.from(await file.arrayBuffer()).toString("base64");
+
+      const contentImgPath = `content/dogadjaji/${folder}/${filename}`;
+      const publicImgPath  = `public/content/dogadjaji/${slug}/${filename}`;
+
+      const cSha = await getFileSha(contentImgPath);
+      await putFile(contentImgPath, base64, `Admin: dodaj galeriju za događaj "${slug}"`, cSha);
+
+      const pSha = await getFileSha(publicImgPath);
+      await putFile(publicImgPath, base64, `Admin: dodaj galeriju za događaj "${slug}"`, pSha);
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 });
   }
 }
 
@@ -406,6 +564,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: "Greška pri uploadu." }, { status: 500 });
+    return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 });
   }
 }

@@ -55,6 +55,12 @@ export function getAllEvents(): EventData[] {
 
     if (data.arhivirano === true) continue;
 
+    const rawImages = getImages(slug);
+    const frontmatterImage = (data.image as string | undefined) ?? "";
+    const images = frontmatterImage && rawImages.includes(frontmatterImage)
+      ? [frontmatterImage, ...rawImages.filter((img) => img !== frontmatterImage)]
+      : rawImages;
+
     events.push({
       slug,
       title: data.title ?? "",
@@ -62,7 +68,7 @@ export function getAllEvents(): EventData[] {
       excerpt: data.excerpt ?? "",
       folderName: entry.name,
       content: content.trim(),
-      images: getImages(slug),
+      images,
       author: data.author ?? "",
     });
   }

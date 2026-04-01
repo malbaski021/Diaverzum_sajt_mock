@@ -16,7 +16,8 @@ function findMdxInFolder(folderPath: string): string | null {
 function findGalleryImages(
   section: "vesti" | "blog",
   folderName: string,
-  slug: string
+  slug: string,
+  heroImage?: string | null
 ): string[] {
   const publicDir = path.join(process.cwd(), "public", "content", section, slug);
   const contentDir = path.join(process.cwd(), "content", section, folderName);
@@ -36,15 +37,17 @@ function findGalleryImages(
 
   if (!fs.existsSync(publicDir)) return [];
 
-  return fs.readdirSync(publicDir)
+  const all = fs.readdirSync(publicDir)
     .filter((f) => /\.(png|jpg|jpeg|webp)$/i.test(f))
     .sort((a, b) => {
       const na = parseInt(a);
       const nb = parseInt(b);
       return isNaN(na) || isNaN(nb) ? a.localeCompare(b) : na - nb;
     })
-    .slice(1) // sve osim prve (glavne) slike
     .map((f) => `/content/${section}/${slug}/${f}`);
+
+  if (heroImage) return all.filter((p) => p !== heroImage);
+  return all.slice(1); // fallback: sve osim prve
 }
 
 function findFolderImage(
@@ -112,7 +115,7 @@ export function getAllArticles(section: "vesti" | "blog"): ArticleMeta[] {
       const raw = fs.readFileSync(mdxPath, "utf-8");
       const { data } = matter(raw);
       const image = data.image || findFolderImage(section, folderName, slug) || null;
-      const gallery = findGalleryImages(section, folderName, slug);
+      const gallery = findGalleryImages(section, folderName, slug, image);
 
       if (section === "blog" && data.arhivirano === true) return null;
 
@@ -173,7 +176,7 @@ export function getArticleBySlug(
   const raw = fs.readFileSync(mdxPath, "utf-8");
   const { data, content } = matter(raw);
   const image = data.image || findFolderImage(section, folderName, slug) || null;
-  const gallery = findGalleryImages(section, folderName, slug);
+  const gallery = findGalleryImages(section, folderName, slug, image);
 
   return {
     meta: {

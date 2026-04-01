@@ -171,6 +171,7 @@ interface BlogEditData {
   tags: string[];
   text: string;
   arhivirano: boolean;
+  image?: string;
 }
 
 interface ClanMember {
@@ -212,6 +213,13 @@ export default function AdminPage() {
   const [editNewTag,  setEditNewTag]  = useState("");
   const [editTitleError, setEditTitleError] = useState<string | null>(null);
   const [editTextError,  setEditTextError]  = useState<string | null>(null);
+  const [editGallerySaving, setEditGallerySaving] = useState(false);
+  const [editGalleryStatus, setEditGalleryStatus] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [editImages, setEditImages] = useState<string[]>([]);
+  const [editImagesLoading, setEditImagesLoading] = useState(false);
+  const [editDeleteSelected, setEditDeleteSelected] = useState<Set<string>>(new Set());
+  const [editDeleting, setEditDeleting] = useState(false);
+  const [editDeleteStatus, setEditDeleteStatus] = useState<{ ok: boolean; msg: string } | null>(null);
 
   // Delete view (blog)
   const [deleteSearch,   setDeleteSearch]   = useState("");
@@ -258,6 +266,13 @@ export default function AdminPage() {
   const [dogEditNewTag,     setDogEditNewTag]     = useState("");
   const [dogEditTitleError, setDogEditTitleError] = useState<string | null>(null);
   const [dogEditTextError,  setDogEditTextError]  = useState<string | null>(null);
+  const [dogGallerySaving, setDogGallerySaving] = useState(false);
+  const [dogGalleryStatus, setDogGalleryStatus] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [dogImages, setDogImages] = useState<string[]>([]);
+  const [dogImagesLoading, setDogImagesLoading] = useState(false);
+  const [dogDeleteSelected, setDogDeleteSelected] = useState<Set<string>>(new Set());
+  const [dogDeleting, setDogDeleting] = useState(false);
+  const [dogDeleteStatus, setDogDeleteStatus] = useState<{ ok: boolean; msg: string } | null>(null);
 
   // Dogadjaji — delete
   const [deleteDogItems,   setDeleteDogItems]   = useState<BlogItem[]>([]);
@@ -332,18 +347,38 @@ export default function AdminPage() {
   const imageRef        = useRef<HTMLInputElement>(null);
   const galleryRef      = useRef<HTMLInputElement>(null);
   const izvorRef        = useRef<HTMLInputElement>(null);
-  const clanEditImageRef = useRef<HTMLInputElement>(null);
+  const clanEditImageRef  = useRef<HTMLInputElement>(null);
+  const editGalleryRef    = useRef<HTMLInputElement>(null);
+  const dogGalleryRef     = useRef<HTMLInputElement>(null);
+
+  async function fetchEditImages(slug: string, folder: string) {
+    setEditImagesLoading(true);
+    try {
+      const res = await fetch(`/api/admin/blog?images=1&slug=${encodeURIComponent(slug)}&folder=${encodeURIComponent(folder)}`);
+      const data = await res.json();
+      setEditImages(data.images ?? []);
+    } catch {
+      setEditImages([]);
+    } finally {
+      setEditImagesLoading(false);
+    }
+  }
 
   async function openEdit(item: BlogItem) {
     setEditLoading(true);
     setEditStatus(null);
     setEditTitleError(null);
     setEditTextError(null);
+    setEditImages([]);
+    setEditGalleryStatus(null);
+    setEditDeleteSelected(new Set());
+    setEditDeleteStatus(null);
     setView("edit");
     try {
       const res  = await fetch(`/api/admin/blog?folder=${encodeURIComponent(item.folder)}&slug=${encodeURIComponent(item.slug)}`);
       const data = await res.json();
       setEditData({ ...data, arhivirano: data.arhivirano ?? false });
+      fetchEditImages(item.slug, item.folder);
     } catch {
       setEditStatus({ ok: false, msg: "Greška pri učitavanju bloga." });
     } finally {
@@ -370,16 +405,34 @@ export default function AdminPage() {
     }
   }
 
+  async function fetchDogImages(slug: string, folder: string) {
+    setDogImagesLoading(true);
+    try {
+      const res = await fetch(`/api/admin/dogadjaji?images=1&slug=${encodeURIComponent(slug)}&folder=${encodeURIComponent(folder)}`);
+      const data = await res.json();
+      setDogImages(data.images ?? []);
+    } catch {
+      setDogImages([]);
+    } finally {
+      setDogImagesLoading(false);
+    }
+  }
+
   async function openDogEdit(item: BlogItem) {
     setDogEditLoading(true);
     setDogEditStatus(null);
     setDogEditTitleError(null);
     setDogEditTextError(null);
+    setDogImages([]);
+    setDogGalleryStatus(null);
+    setDogDeleteSelected(new Set());
+    setDogDeleteStatus(null);
     setView("edit");
     try {
       const res  = await fetch(`/api/admin/dogadjaji?folder=${encodeURIComponent(item.folder)}&slug=${encodeURIComponent(item.slug)}`);
       const data = await res.json();
       setDogEditData({ ...data, arhivirano: data.arhivirano ?? false });
+      fetchDogImages(item.slug, item.folder);
     } catch {
       setDogEditStatus({ ok: false, msg: "Greška pri učitavanju događaja." });
     } finally {
@@ -403,6 +456,112 @@ export default function AdminPage() {
       setDogEditStatus({ ok: false, msg: "Greška pri čuvanju." });
     } finally {
       setDogEditSaving(false);
+    }
+  }
+
+  async function handleEditGalleryUpload() {
+    if (!editData) return;
+    const files = editGalleryRef.current?.files ? Array.from(editGalleryRef.current.files) : [];
+    if (files.length === 0) { setEditGalleryStatus({ ok: false, msg: "Nema odabranih slika." }); return; }
+    setEditGallerySaving(true);
+    setEditGalleryStatus(null);
+    try {
+      const fd = new FormData();
+      fd.append("folder", editData.folder);
+      fd.append("slug", editData.slug);
+      files.forEach((f) => fd.append("gallery", f));
+      const res  = await fetch("/api/admin/blog", { method: "PATCH", body: fd });
+      const data = await res.json();
+      if (res.ok) {
+        setEditGalleryStatus({ ok: true, msg: `${files.length} ${files.length === 1 ? "slika dodata" : "slika dodato"} u galeriju!` });
+        if (editGalleryRef.current) editGalleryRef.current.value = "";
+        fetchEditImages(editData.slug, editData.folder);
+      } else {
+        setEditGalleryStatus({ ok: false, msg: data.error ?? "Greška pri uploadu." });
+      }
+    } catch {
+      setEditGalleryStatus({ ok: false, msg: "Greška pri uploadu." });
+    } finally {
+      setEditGallerySaving(false);
+    }
+  }
+
+  async function handleEditDeleteImages() {
+    if (!editData || editDeleteSelected.size === 0) return;
+    setEditDeleting(true);
+    setEditDeleteStatus(null);
+    try {
+      const res = await fetch("/api/admin/blog", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ folder: editData.folder, slug: editData.slug, images: Array.from(editDeleteSelected) }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const count = editDeleteSelected.size;
+        setEditDeleteSelected(new Set());
+        setEditDeleteStatus({ ok: true, msg: `${count} ${count === 1 ? "slika obrisana" : "slike obrisane"}.` });
+        fetchEditImages(editData.slug, editData.folder);
+      } else {
+        setEditDeleteStatus({ ok: false, msg: data.error ?? "Greška pri brisanju." });
+      }
+    } catch {
+      setEditDeleteStatus({ ok: false, msg: "Greška pri brisanju." });
+    } finally {
+      setEditDeleting(false);
+    }
+  }
+
+  async function handleDogGalleryUpload() {
+    if (!dogEditData) return;
+    const files = dogGalleryRef.current?.files ? Array.from(dogGalleryRef.current.files) : [];
+    if (files.length === 0) { setDogGalleryStatus({ ok: false, msg: "Nema odabranih slika." }); return; }
+    setDogGallerySaving(true);
+    setDogGalleryStatus(null);
+    try {
+      const fd = new FormData();
+      fd.append("folder", dogEditData.folder);
+      fd.append("slug", dogEditData.slug);
+      files.forEach((f) => fd.append("gallery", f));
+      const res  = await fetch("/api/admin/dogadjaji", { method: "PATCH", body: fd });
+      const data = await res.json();
+      if (res.ok) {
+        setDogGalleryStatus({ ok: true, msg: `${files.length} ${files.length === 1 ? "slika dodata" : "slika dodato"} u galeriju!` });
+        if (dogGalleryRef.current) dogGalleryRef.current.value = "";
+        fetchDogImages(dogEditData.slug, dogEditData.folder);
+      } else {
+        setDogGalleryStatus({ ok: false, msg: data.error ?? "Greška pri uploadu." });
+      }
+    } catch {
+      setDogGalleryStatus({ ok: false, msg: "Greška pri uploadu." });
+    } finally {
+      setDogGallerySaving(false);
+    }
+  }
+
+  async function handleDogDeleteImages() {
+    if (!dogEditData || dogDeleteSelected.size === 0) return;
+    setDogDeleting(true);
+    setDogDeleteStatus(null);
+    try {
+      const res = await fetch("/api/admin/dogadjaji", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ folder: dogEditData.folder, slug: dogEditData.slug, images: Array.from(dogDeleteSelected) }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const count = dogDeleteSelected.size;
+        setDogDeleteSelected(new Set());
+        setDogDeleteStatus({ ok: true, msg: `${count} ${count === 1 ? "slika obrisana" : "slike obrisane"}.` });
+        fetchDogImages(dogEditData.slug, dogEditData.folder);
+      } else {
+        setDogDeleteStatus({ ok: false, msg: data.error ?? "Greška pri brisanju." });
+      }
+    } catch {
+      setDogDeleteStatus({ ok: false, msg: "Greška pri brisanju." });
+    } finally {
+      setDogDeleting(false);
     }
   }
 
@@ -1680,6 +1839,103 @@ export default function AdminPage() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Galerija — dodaj slike */}
+                  <div className="bg-white rounded-xl border border-gray-100 p-5 space-y-3">
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Dodaj slike u galeriju <span className="normal-case font-normal text-gray-400">(Dugme DODAJ U GALERIJU radi nezavisno od dugmeta SAČUVAJ IZMENE, jednom klikneš na DODAJ U GALERIJU i slike će biti sačuvane)</span></p>
+                    <p className="text-xs text-gray-500">JPG / PNG, max 5 MB po slici.</p>
+                    <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+                      <input
+                        ref={dogGalleryRef}
+                        type="file"
+                        accept=".jpg,.jpeg,.png"
+                        multiple
+                        className={fileCls}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleDogGalleryUpload}
+                        disabled={dogGallerySaving}
+                        className="px-5 py-2 bg-[#0056b3] text-white text-sm font-semibold rounded-lg hover:bg-[#003d80] transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+                      >
+                        {dogGallerySaving ? "Upload..." : "Dodaj u galeriju"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleDogDeleteImages}
+                        disabled={dogDeleteSelected.size === 0 || dogDeleting}
+                        className="px-5 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+                      >
+                        {dogDeleting ? "Brisanje..." : `Obriši izabrano${dogDeleteSelected.size > 0 ? ` (${dogDeleteSelected.size})` : ""}`}
+                      </button>
+                    </div>
+                    {dogGalleryStatus && (
+                      <p className={`text-sm font-medium ${dogGalleryStatus.ok ? "text-green-600" : "text-red-500"}`}>
+                        {dogGalleryStatus.msg}
+                      </p>
+                    )}
+                    {dogDeleteStatus && (
+                      <p className={`text-sm font-medium ${dogDeleteStatus.ok ? "text-green-600" : "text-red-500"}`}>
+                        {dogDeleteStatus.msg}
+                      </p>
+                    )}
+                    {/* Postojeće slike */}
+                    {dogImagesLoading ? (
+                      <p className="text-xs text-gray-400">Učitavanje slika...</p>
+                    ) : dogImages.length > 0 ? (
+                      <div>
+                        <p className="text-xs font-semibold text-gray-500 mb-1">Trenutne slike ({dogImages.length}) — <span className="font-normal text-gray-400">klikni na sliku da je postaviš kao glavnu, pa pritisni SAČUVAJ IZMENE</span></p>
+                        <div className="grid grid-cols-5 sm:grid-cols-7 md:grid-cols-9 gap-1.5">
+                          {dogImages.map((src) => {
+                            const isMain = dogEditData?.image ? dogEditData.image === src : src === dogImages[0];
+                            const isSelected = dogDeleteSelected.has(src);
+                            return (
+                              <button
+                                key={src}
+                                type="button"
+                                onClick={() => setDogEditData((p) => p ? { ...p, image: src } : p)}
+                                className={`relative aspect-square rounded-lg overflow-hidden border-2 bg-gray-50 transition-colors ${isMain ? "border-[#0056b3]" : "border-gray-200 hover:border-gray-400"}`}
+                                title={isMain ? "Glavna slika" : "Postavi kao glavnu"}
+                              >
+                                <img src={src} alt="" className="w-full h-full object-cover" />
+                                {isMain && (
+                                  <span className="absolute bottom-0 left-0 right-0 text-center text-[10px] font-bold text-white bg-[#0056b3] py-0.5">Glavna</span>
+                                )}
+                                <span
+                                  role="checkbox"
+                                  aria-checked={isSelected}
+                                  aria-label={isMain ? "Glavna slika ne može biti obrisana" : "Označi za brisanje"}
+                                  onClick={(e) => {
+                                    if (isMain) return;
+                                    e.stopPropagation();
+                                    setDogDeleteSelected((prev) => {
+                                      const next = new Set(prev);
+                                      next.has(src) ? next.delete(src) : next.add(src);
+                                      return next;
+                                    });
+                                    setDogDeleteStatus(null);
+                                  }}
+                                  className={`absolute top-1 right-1 w-4 h-4 rounded-sm border flex items-center justify-center transition-colors
+                                    ${isMain ? "border-gray-300 bg-white/60 cursor-not-allowed opacity-40" :
+                                      isSelected ? "bg-red-600 border-red-600 cursor-pointer" :
+                                      "bg-white/80 border-gray-400 cursor-pointer hover:border-red-400"}`}
+                                >
+                                  {isSelected && (
+                                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+                                      <path d="M2 5l2.5 2.5L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+                                  )}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-400">Nema slika za ovaj događaj.</p>
+                    )}
+                  </div>
+
                   <div className="bg-white rounded-xl border border-gray-100 p-5 space-y-3">
                     <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Tagovi</p>
                     <div className="flex flex-wrap gap-2">
@@ -1705,6 +1961,7 @@ export default function AdminPage() {
                         className="px-4 py-2 bg-[#e8f0fb] text-[#0056b3] text-sm font-semibold rounded-lg hover:bg-[#0056b3] hover:text-white transition-colors">Dodaj</button>
                     </div>
                   </div>
+
                   <div className="bg-white rounded-xl border border-gray-100 px-5 py-4 flex items-center gap-3">
                     {dogEditStatus && (
                       <div className={`flex items-center gap-2 flex-1 px-4 py-2.5 rounded-lg text-sm font-medium ${dogEditStatus.ok ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
@@ -1831,6 +2088,103 @@ export default function AdminPage() {
                         </div>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Galerija — dodaj slike */}
+                  <div className="bg-white rounded-xl border border-gray-100 p-5 space-y-3">
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Dodaj slike u galeriju <span className="normal-case font-normal text-gray-400">(Dugme DODAJ U GALERIJU radi nezavisno od dugmeta SAČUVAJ IZMENE, jednom klikneš na DODAJ U GALERIJU i slike će biti sačuvane)</span></p>
+                    <p className="text-xs text-gray-500">JPG / PNG, max 5 MB po slici.</p>
+                    <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+                      <input
+                        ref={editGalleryRef}
+                        type="file"
+                        accept=".jpg,.jpeg,.png"
+                        multiple
+                        className={fileCls}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleEditGalleryUpload}
+                        disabled={editGallerySaving}
+                        className="px-5 py-2 bg-[#0056b3] text-white text-sm font-semibold rounded-lg hover:bg-[#003d80] transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+                      >
+                        {editGallerySaving ? "Upload..." : "Dodaj u galeriju"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleEditDeleteImages}
+                        disabled={editDeleteSelected.size === 0 || editDeleting}
+                        className="px-5 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+                      >
+                        {editDeleting ? "Brisanje..." : `Obriši izabrano${editDeleteSelected.size > 0 ? ` (${editDeleteSelected.size})` : ""}`}
+                      </button>
+                    </div>
+                    {editGalleryStatus && (
+                      <p className={`text-sm font-medium ${editGalleryStatus.ok ? "text-green-600" : "text-red-500"}`}>
+                        {editGalleryStatus.msg}
+                      </p>
+                    )}
+                    {editDeleteStatus && (
+                      <p className={`text-sm font-medium ${editDeleteStatus.ok ? "text-green-600" : "text-red-500"}`}>
+                        {editDeleteStatus.msg}
+                      </p>
+                    )}
+                    {/* Postojeće slike */}
+                    {editImagesLoading ? (
+                      <p className="text-xs text-gray-400">Učitavanje slika...</p>
+                    ) : editImages.length > 0 ? (
+                      <div>
+                        <p className="text-xs font-semibold text-gray-500 mb-1">Trenutne slike ({editImages.length}) — <span className="font-normal text-gray-400">klikni na sliku da je postaviš kao glavnu, pa pritisni SAČUVAJ IZMENE</span></p>
+                        <div className="grid grid-cols-5 sm:grid-cols-7 md:grid-cols-9 gap-1.5">
+                          {editImages.map((src) => {
+                            const isMain = editData?.image ? editData.image === src : src === editImages[0];
+                            const isSelected = editDeleteSelected.has(src);
+                            return (
+                              <button
+                                key={src}
+                                type="button"
+                                onClick={() => setEditData((p) => p ? { ...p, image: src } : p)}
+                                className={`relative aspect-square rounded-lg overflow-hidden border-2 bg-gray-50 transition-colors ${isMain ? "border-[#0056b3]" : "border-gray-200 hover:border-gray-400"}`}
+                                title={isMain ? "Glavna slika" : "Postavi kao glavnu"}
+                              >
+                                <img src={src} alt="" className="w-full h-full object-cover" />
+                                {isMain && (
+                                  <span className="absolute bottom-0 left-0 right-0 text-center text-[10px] font-bold text-white bg-[#0056b3] py-0.5">Glavna</span>
+                                )}
+                                {/* Checkmark za brisanje */}
+                                <span
+                                  role="checkbox"
+                                  aria-checked={isSelected}
+                                  aria-label={isMain ? "Glavna slika ne može biti obrisana" : "Označi za brisanje"}
+                                  onClick={(e) => {
+                                    if (isMain) return;
+                                    e.stopPropagation();
+                                    setEditDeleteSelected((prev) => {
+                                      const next = new Set(prev);
+                                      next.has(src) ? next.delete(src) : next.add(src);
+                                      return next;
+                                    });
+                                    setEditDeleteStatus(null);
+                                  }}
+                                  className={`absolute top-1 right-1 w-4 h-4 rounded-sm border flex items-center justify-center transition-colors
+                                    ${isMain ? "border-gray-300 bg-white/60 cursor-not-allowed opacity-40" :
+                                      isSelected ? "bg-red-600 border-red-600 cursor-pointer" :
+                                      "bg-white/80 border-gray-400 cursor-pointer hover:border-red-400"}`}
+                                >
+                                  {isSelected && (
+                                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+                                      <path d="M2 5l2.5 2.5L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+                                  )}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-400">Nema slika za ovaj blog.</p>
+                    )}
                   </div>
 
                   {/* Tagovi — puna širina */}

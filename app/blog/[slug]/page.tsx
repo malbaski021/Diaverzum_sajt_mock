@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import Img from "@/components/Img";
 import InstaText from "@/components/InstaText";
+import ImageGallery from "@/components/ImageGallery";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import { getArticleBySlug, getAllSlugs } from "@/lib/mdx";
 import { format } from "date-fns";
@@ -182,6 +183,15 @@ export default function BlogSlugPage({ params }: Props) {
               </div>
             </>
           )}
+          {meta.gallery && meta.gallery.length > 0 && (
+            <section aria-labelledby="gallery-heading" className="mt-12">
+              <h2 id="gallery-heading" className="text-xl font-bold text-gray-900 mb-6">
+                Fotografije
+              </h2>
+              <ImageGallery images={meta.gallery} title={meta.title} />
+            </section>
+          )}
+
           <div className="mt-12 pt-8 border-t border-brand-gray-mid">
             <Link href="/blog" className="inline-flex items-center gap-2 text-brand-blue font-medium hover:underline">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
