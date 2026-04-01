@@ -32,6 +32,7 @@ function buildMdx(
   heroLayout: string,
   arhivirano: boolean = false,
   image?: string,
+  heroObjectPosition?: string,
 ): string {
   const lines = [
     `---`,
@@ -42,6 +43,7 @@ function buildMdx(
     `tags: ${JSON.stringify(tags)}`,
     `heroLayout: "${heroLayout}"`,
     ...(image ? [`image: "${image}"`] : []),
+    ...(heroObjectPosition ? [`heroObjectPosition: "${heroObjectPosition}"`] : []),
     `arhivirano: ${arhivirano}`,
     `---`,
     ``,
@@ -236,7 +238,7 @@ export async function GET(req: NextRequest) {
         const fm  = parseFrontmatter(raw);
         const body = extractBody(raw);
         const tags = fm.tags ? JSON.parse(fm.tags.replace(/'/g, '"')) : [];
-        return NextResponse.json({ folder, slug, title: fm.title ?? "", date: fm.date ?? "", author: fm.author ?? "", heroLayout: fm.heroLayout ?? "top", tags, arhivirano: fm.arhivirano === "true", image: fm.image ?? "", text: body });
+        return NextResponse.json({ folder, slug, title: fm.title ?? "", date: fm.date ?? "", author: fm.author ?? "", heroLayout: fm.heroLayout ?? "top", heroObjectPosition: fm.heroObjectPosition ?? "", tags, arhivirano: fm.arhivirano === "true", image: fm.image ?? "", text: body });
       }
 
       // GitHub
@@ -248,7 +250,7 @@ export async function GET(req: NextRequest) {
       const fm  = parseFrontmatter(raw);
       const body = extractBody(raw);
       const tags = fm.tags ? JSON.parse(fm.tags.replace(/'/g, '"')) : [];
-      return NextResponse.json({ folder, slug, sha: fileData.sha, title: fm.title ?? "", date: fm.date ?? "", author: fm.author ?? "", heroLayout: fm.heroLayout ?? "top", tags, arhivirano: fm.arhivirano === "true", image: fm.image ?? "", text: body });
+      return NextResponse.json({ folder, slug, sha: fileData.sha, title: fm.title ?? "", date: fm.date ?? "", author: fm.author ?? "", heroLayout: fm.heroLayout ?? "top", heroObjectPosition: fm.heroObjectPosition ?? "", tags, arhivirano: fm.arhivirano === "true", image: fm.image ?? "", text: body });
     }
 
     // --- Lista svih događaja ---
@@ -292,11 +294,11 @@ export async function GET(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
-    const { folder, slug, title, author, date, text, heroLayout, tags, sha, arhivirano, image } = await req.json();
+    const { folder, slug, title, author, date, text, heroLayout, heroObjectPosition, tags, sha, arhivirano, image } = await req.json();
     if (!folder || !slug || !title) return NextResponse.json({ error: "folder, slug i title su obavezni." }, { status: 400 });
 
     const excerpt    = (text ?? "").slice(0, 160).replace(/\n/g, " ").trim();
-    const mdxContent = buildMdx(title, date ?? "", excerpt, author ?? "", tags ?? [], heroLayout ?? "top", arhivirano ?? false, image || undefined) + (text ?? "");
+    const mdxContent = buildMdx(title, date ?? "", excerpt, author ?? "", tags ?? [], heroLayout ?? "top", arhivirano ?? false, image || undefined, heroObjectPosition || undefined) + (text ?? "");
     const mdxRelPath = `content/dogadjaji/${folder}/${slug}.mdx`;
 
     if (IS_LOCAL) {

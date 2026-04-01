@@ -11,6 +11,8 @@ export interface EventData {
   content: string;
   images: string[]; // public URLs
   author: string;
+  heroObjectPosition?: string;
+  heroLayout?: string;
 }
 
 function getImages(slug: string): string[] {
@@ -70,6 +72,8 @@ export function getAllEvents(): EventData[] {
       content: content.trim(),
       images,
       author: data.author ?? "",
+      heroObjectPosition: data.heroObjectPosition ?? undefined,
+      heroLayout: data.heroLayout ?? undefined,
     });
   }
 

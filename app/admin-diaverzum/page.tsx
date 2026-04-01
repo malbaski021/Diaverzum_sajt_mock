@@ -172,6 +172,7 @@ interface BlogEditData {
   text: string;
   arhivirano: boolean;
   image?: string;
+  heroObjectPosition?: string;
 }
 
 interface ClanMember {
@@ -375,10 +376,16 @@ export default function AdminPage() {
     setEditDeleteStatus(null);
     setView("edit");
     try {
-      const res  = await fetch(`/api/admin/blog?folder=${encodeURIComponent(item.folder)}&slug=${encodeURIComponent(item.slug)}`);
-      const data = await res.json();
-      setEditData({ ...data, arhivirano: data.arhivirano ?? false });
-      fetchEditImages(item.slug, item.folder);
+      const [blogRes, imgRes] = await Promise.all([
+        fetch(`/api/admin/blog?folder=${encodeURIComponent(item.folder)}&slug=${encodeURIComponent(item.slug)}`),
+        fetch(`/api/admin/blog?images=1&slug=${encodeURIComponent(item.slug)}&folder=${encodeURIComponent(item.folder)}`),
+      ]);
+      const data = await blogRes.json();
+      const imgData = await imgRes.json();
+      const images: string[] = imgData.images ?? [];
+      setEditImages(images);
+      const image = data.image || images[0] || "";
+      setEditData({ ...data, arhivirano: data.arhivirano ?? false, image });
     } catch {
       setEditStatus({ ok: false, msg: "Greška pri učitavanju bloga." });
     } finally {
@@ -429,10 +436,16 @@ export default function AdminPage() {
     setDogDeleteStatus(null);
     setView("edit");
     try {
-      const res  = await fetch(`/api/admin/dogadjaji?folder=${encodeURIComponent(item.folder)}&slug=${encodeURIComponent(item.slug)}`);
-      const data = await res.json();
-      setDogEditData({ ...data, arhivirano: data.arhivirano ?? false });
-      fetchDogImages(item.slug, item.folder);
+      const [dogRes, imgRes] = await Promise.all([
+        fetch(`/api/admin/dogadjaji?folder=${encodeURIComponent(item.folder)}&slug=${encodeURIComponent(item.slug)}`),
+        fetch(`/api/admin/dogadjaji?images=1&slug=${encodeURIComponent(item.slug)}&folder=${encodeURIComponent(item.folder)}`),
+      ]);
+      const data = await dogRes.json();
+      const imgData = await imgRes.json();
+      const images: string[] = imgData.images ?? [];
+      setDogImages(images);
+      const image = data.image || images[0] || "";
+      setDogEditData({ ...data, arhivirano: data.arhivirano ?? false, image });
     } catch {
       setDogEditStatus({ ok: false, msg: "Greška pri učitavanju događaja." });
     } finally {
@@ -949,8 +962,6 @@ export default function AdminPage() {
               key={item.id}
               onClick={() => navigate(item.id)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-left ${
-                item.id === "dogadjaji" ? "border-2 border-red-500" : ""
-              } ${
                 activeSection === item.id && view !== "dashboard"
                   ? "bg-[#e8f0fb] text-[#0056b3]"
                   : "text-gray-600 hover:bg-gray-50"
@@ -1836,6 +1847,34 @@ export default function AdminPage() {
                             <option value="float">Portret — slika levo, tekst teče oko nje</option>
                           </select>
                         </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1.5">Fokus glavne slike</label>
+                          <div className="flex gap-4 items-start">
+                            <div className="grid grid-cols-5 gap-0.5 flex-shrink-0">
+                              {Array.from({ length: 5 }, (_, row) =>
+                                Array.from({ length: 5 }, (_, col) => {
+                                  const pos = `${col * 25}% ${row * 25}%`;
+                                  const current = dogEditData.heroObjectPosition || "50% 50%";
+                                  const active = current === pos;
+                                  return (
+                                    <button key={pos} type="button" title={pos}
+                                      onClick={() => setDogEditData((p) => p && ({ ...p, heroObjectPosition: pos }))}
+                                      className={`w-6 h-6 rounded-sm transition-colors flex items-center justify-center ${active ? "bg-[#0056b3]" : "bg-gray-100 hover:bg-gray-300"}`}>
+                                      <span className={`w-1.5 h-1.5 rounded-full ${active ? "bg-white" : "bg-gray-400"}`} />
+                                    </button>
+                                  );
+                                })
+                              )}
+                            </div>
+                            {dogEditData.image && (
+                              <div className="relative w-24 h-24 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={dogEditData.image} alt="" className="w-full h-full object-cover"
+                                  style={{ objectPosition: dogEditData.heroObjectPosition || "50% 50%" }} />
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -2086,6 +2125,34 @@ export default function AdminPage() {
                             <option value="top">Landscape — slika gore, tekst ispod</option>
                             <option value="float">Portret — slika levo, tekst teče oko nje</option>
                           </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1.5">Fokus glavne slike</label>
+                          <div className="flex gap-4 items-start">
+                            <div className="grid grid-cols-5 gap-0.5 flex-shrink-0">
+                              {Array.from({ length: 5 }, (_, row) =>
+                                Array.from({ length: 5 }, (_, col) => {
+                                  const pos = `${col * 25}% ${row * 25}%`;
+                                  const current = editData.heroObjectPosition || "50% 50%";
+                                  const active = current === pos;
+                                  return (
+                                    <button key={pos} type="button" title={pos}
+                                      onClick={() => setEditData((p) => p && ({ ...p, heroObjectPosition: pos }))}
+                                      className={`w-6 h-6 rounded-sm transition-colors flex items-center justify-center ${active ? "bg-[#0056b3]" : "bg-gray-100 hover:bg-gray-300"}`}>
+                                      <span className={`w-1.5 h-1.5 rounded-full ${active ? "bg-white" : "bg-gray-400"}`} />
+                                    </button>
+                                  );
+                                })
+                              )}
+                            </div>
+                            {editData.image && (
+                              <div className="relative w-24 h-24 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={editData.image} alt="" className="w-full h-full object-cover"
+                                  style={{ objectPosition: editData.heroObjectPosition || "50% 50%" }} />
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>

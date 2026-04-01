@@ -175,7 +175,7 @@ export default function BlogSlugPage({ params }: Props) {
             <>
               {meta.image && !meta.noHero && (
                 <div className="relative h-64 md:h-96 rounded-xl overflow-hidden mb-8">
-                  <Img src={meta.image} alt={meta.title} fill className="object-cover" priority />
+                  <Img src={meta.image} alt={meta.title} fill className="object-cover" style={{ objectPosition: meta.heroObjectPosition ?? "center" }} priority />
                 </div>
               )}
               <div className="prose max-w-none w-full overflow-hidden">

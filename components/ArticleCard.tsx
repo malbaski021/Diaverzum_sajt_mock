@@ -23,6 +23,7 @@ export default function ArticleCard({ article, section }: Props) {
               alt=""
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-300"
+              style={{ objectPosition: article.heroObjectPosition ?? "center" }}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">

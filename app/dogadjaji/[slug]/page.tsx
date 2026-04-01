@@ -75,6 +75,7 @@ export default function DogadjajPage({ params }: Props) {
                 alt={`${event.title} — fotografija`}
                 fill
                 className="object-cover"
+                style={{ objectPosition: event.heroObjectPosition ?? "center" }}
                 priority
               />
             </div>

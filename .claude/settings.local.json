@@ -55,7 +55,10 @@
       "Bash(find D:/Diaverzum_sajt_mock/content/blog -maxdepth 1 -iname *divcibare* -o -iname *dečiji*)",
       "Bash(ffmpeg -version)",
       "Bash(ffmpeg -i \"D:/Diaverzum_sajt_mock/content/blog/akcija u kompaniji Lear/1.heic\" \"D:/Diaverzum_sajt_mock/content/blog/akcija u kompaniji Lear/1.jpg\" -y)",
-      "Bash(find \"D:/Diaverzum_sajt_mock/content/dogadjaji\" -name \"*.txt\" -delete)"
+      "Bash(find \"D:/Diaverzum_sajt_mock/content/dogadjaji\" -name \"*.txt\" -delete)",
+      "Bash(xargs grep:*)",
+      "Bash(head -10 \"D:/Diaverzum_sajt_mock/content/dogadjaji/Prvi rođendan/\"*.mdx)",
+      "Bash(grep:*)"
     ]
   }
 }
