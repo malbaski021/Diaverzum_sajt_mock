@@ -35,11 +35,11 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { id: "vesti",     label: "Vesti",     hasBackend: false, description: "Novosti i aktuelnosti",           addLabel: "Dodaj vest"      },
-  { id: "dogadjaji", label: "Događaji",  hasBackend: true,  description: "Događaji i akcije udruženja",     addLabel: "Dodaj događaj"   },
-  { id: "blog",      label: "Blog",      hasBackend: true,  description: "Blog postovi i priče",             addLabel: "Dodaj blog"      },
-  { id: "juniori",   label: "Juniori",   hasBackend: false, description: "Sadržaj za mlade dijabetičare",   addLabel: "Dodaj objavu"    },
-  { id: "clanovi",   label: "Članovi",   hasBackend: true,  description: "Upravljaj listom članova",        addLabel: "Dodaj člana"     },
+  { id: "vesti",     label: "Vesti",     hasBackend: true,  description: "Novosti i aktuelnosti",                   addLabel: "Dodaj vest"      },
+  { id: "dogadjaji", label: "Događaji",  hasBackend: true,  description: "Događaji i akcije udruženja",             addLabel: "Dodaj događaj"   },
+  { id: "blog",      label: "Blog",      hasBackend: true,  description: "Blog postovi i priče",                    addLabel: "Dodaj blog"      },
+  { id: "juniori",   label: "Juniori",   hasBackend: true,  description: "Sadržaj za mlade osobe sa dijabetesom",   addLabel: "Dodaj objavu"    },
+  { id: "clanovi",   label: "Članovi",   hasBackend: true,  description: "Upravljaj listom članova",                addLabel: "Dodaj člana"     },
 ];
 
 // --- SVG Ikone ---
@@ -182,6 +182,7 @@ interface ClanMember {
   image: string;
   bio: string;
   arhivirano?: boolean;
+  heroObjectPosition?: string;
 }
 
 interface ClanEditData {
@@ -190,6 +191,7 @@ interface ClanEditData {
   bio: string;
   image: string;
   arhivirano: boolean;
+  heroObjectPosition: string;
 }
 
 // --- Komponenta ---
@@ -230,7 +232,10 @@ export default function AdminPage() {
   const [modal, setModal] = useState<
     | { type: "arhiviraj" | "vrati" | "obrisi"; kind: "blog"; item: BlogItem }
     | { type: "arhiviraj" | "vrati" | "obrisi"; kind: "dogadjaj"; item: BlogItem }
+    | { type: "arhiviraj" | "vrati" | "obrisi"; kind: "vest"; item: BlogItem }
+    | { type: "arhiviraj" | "vrati" | "obrisi"; kind: "junior"; item: BlogItem }
     | { type: "arhiviraj" | "vrati" | "obrisi"; kind: "clan"; item: ClanMember }
+    | { type: "obrisi-sliku"; kind: "clan"; item: ClanMember }
     | null
   >(null);
   const [modalLoading,   setModalLoading]   = useState(false);
@@ -280,6 +285,62 @@ export default function AdminPage() {
   const [deleteDogLoading, setDeleteDogLoading] = useState(false);
   const [deleteDogError,   setDeleteDogError]   = useState(false);
   const [deleteDogSearch,  setDeleteDogSearch]  = useState("");
+
+  // Vesti — lista
+  const [vestItems,    setVestItems]    = useState<BlogItem[]>([]);
+  const [vestLoading,  setVestLoading]  = useState(false);
+  const [vestError,    setVestError]    = useState(false);
+  const [vestSearch,   setVestSearch]   = useState("");
+
+  // Vesti — edit
+  const [vestEditData,       setVestEditData]       = useState<BlogEditData | null>(null);
+  const [vestEditLoading,    setVestEditLoading]    = useState(false);
+  const [vestEditSaving,     setVestEditSaving]     = useState(false);
+  const [vestEditStatus,     setVestEditStatus]     = useState<{ ok: boolean; msg: string } | null>(null);
+  const [vestEditNewTag,     setVestEditNewTag]     = useState("");
+  const [vestEditTitleError, setVestEditTitleError] = useState<string | null>(null);
+  const [vestEditTextError,  setVestEditTextError]  = useState<string | null>(null);
+  const [vestGallerySaving,  setVestGallerySaving]  = useState(false);
+  const [vestGalleryStatus,  setVestGalleryStatus]  = useState<{ ok: boolean; msg: string } | null>(null);
+  const [vestImages,         setVestImages]         = useState<string[]>([]);
+  const [vestImagesLoading,  setVestImagesLoading]  = useState(false);
+  const [vestDeleteSelected, setVestDeleteSelected] = useState<Set<string>>(new Set());
+  const [vestDeleting,       setVestDeleting]       = useState(false);
+  const [vestDeleteStatus,   setVestDeleteStatus]   = useState<{ ok: boolean; msg: string } | null>(null);
+
+  // Vesti — delete
+  const [deleteVestItems,   setDeleteVestItems]   = useState<BlogItem[]>([]);
+  const [deleteVestLoading, setDeleteVestLoading] = useState(false);
+  const [deleteVestError,   setDeleteVestError]   = useState(false);
+  const [deleteVestSearch,  setDeleteVestSearch]  = useState("");
+
+  // Juniori — lista
+  const [juniorItems,    setJuniorItems]    = useState<BlogItem[]>([]);
+  const [juniorLoading,  setJuniorLoading]  = useState(false);
+  const [juniorError,    setJuniorError]    = useState(false);
+  const [juniorSearch,   setJuniorSearch]   = useState("");
+
+  // Juniori — edit
+  const [juniorEditData,       setJuniorEditData]       = useState<BlogEditData | null>(null);
+  const [juniorEditLoading,    setJuniorEditLoading]    = useState(false);
+  const [juniorEditSaving,     setJuniorEditSaving]     = useState(false);
+  const [juniorEditStatus,     setJuniorEditStatus]     = useState<{ ok: boolean; msg: string } | null>(null);
+  const [juniorEditNewTag,     setJuniorEditNewTag]     = useState("");
+  const [juniorEditTitleError, setJuniorEditTitleError] = useState<string | null>(null);
+  const [juniorEditTextError,  setJuniorEditTextError]  = useState<string | null>(null);
+  const [juniorGallerySaving,  setJuniorGallerySaving]  = useState(false);
+  const [juniorGalleryStatus,  setJuniorGalleryStatus]  = useState<{ ok: boolean; msg: string } | null>(null);
+  const [juniorImages,         setJuniorImages]         = useState<string[]>([]);
+  const [juniorImagesLoading,  setJuniorImagesLoading]  = useState(false);
+  const [juniorDeleteSelected, setJuniorDeleteSelected] = useState<Set<string>>(new Set());
+  const [juniorDeleting,       setJuniorDeleting]       = useState(false);
+  const [juniorDeleteStatus,   setJuniorDeleteStatus]   = useState<{ ok: boolean; msg: string } | null>(null);
+
+  // Juniori — delete
+  const [deleteJuniorItems,   setDeleteJuniorItems]   = useState<BlogItem[]>([]);
+  const [deleteJuniorLoading, setDeleteJuniorLoading] = useState(false);
+  const [deleteJuniorError,   setDeleteJuniorError]   = useState(false);
+  const [deleteJuniorSearch,  setDeleteJuniorSearch]  = useState("");
 
   // Form state
   const [, setIzvor]               = useState("");
@@ -351,6 +412,8 @@ export default function AdminPage() {
   const clanEditImageRef  = useRef<HTMLInputElement>(null);
   const editGalleryRef    = useRef<HTMLInputElement>(null);
   const dogGalleryRef     = useRef<HTMLInputElement>(null);
+  const vestGalleryRef    = useRef<HTMLInputElement>(null);
+  const juniorGalleryRef  = useRef<HTMLInputElement>(null);
 
   async function fetchEditImages(slug: string, folder: string) {
     setEditImagesLoading(true);
@@ -578,6 +641,232 @@ export default function AdminPage() {
     }
   }
 
+  async function fetchVestImages(slug: string, folder: string) {
+    setVestImagesLoading(true);
+    try {
+      const res = await fetch(`/api/admin/vesti?images=1&slug=${encodeURIComponent(slug)}&folder=${encodeURIComponent(folder)}`);
+      const data = await res.json();
+      setVestImages(data.images ?? []);
+    } catch {
+      setVestImages([]);
+    } finally {
+      setVestImagesLoading(false);
+    }
+  }
+
+  async function openVestEdit(item: BlogItem) {
+    setVestEditLoading(true);
+    setVestEditStatus(null);
+    setVestEditTitleError(null);
+    setVestEditTextError(null);
+    setVestImages([]);
+    setVestGalleryStatus(null);
+    setVestDeleteSelected(new Set());
+    setVestDeleteStatus(null);
+    setView("edit");
+    try {
+      const [vestRes, imgRes] = await Promise.all([
+        fetch(`/api/admin/vesti?folder=${encodeURIComponent(item.folder)}&slug=${encodeURIComponent(item.slug)}`),
+        fetch(`/api/admin/vesti?images=1&slug=${encodeURIComponent(item.slug)}&folder=${encodeURIComponent(item.folder)}`),
+      ]);
+      const data = await vestRes.json();
+      const imgData = await imgRes.json();
+      const images: string[] = imgData.images ?? [];
+      setVestImages(images);
+      const image = data.image || images[0] || "";
+      setVestEditData({ ...data, arhivirano: data.arhivirano ?? false, image });
+    } catch {
+      setVestEditStatus({ ok: false, msg: "Greška pri učitavanju vesti." });
+    } finally {
+      setVestEditLoading(false);
+    }
+  }
+
+  async function handleVestEditSave() {
+    if (!vestEditData) return;
+    const titleErr = validateTitle(vestEditData.title);
+    if (titleErr) { setVestEditTitleError(titleErr); setVestEditStatus({ ok: false, msg: titleErr }); return; }
+    if (vestEditData.text.trim().length < 20) { setVestEditTextError("Tekst mora imati najmanje 20 karaktera."); setVestEditStatus({ ok: false, msg: "Tekst mora imati najmanje 20 karaktera." }); return; }
+    setVestEditSaving(true);
+    setVestEditStatus(null);
+    try {
+      const res  = await fetch("/api/admin/vesti", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(vestEditData) });
+      const data = await res.json();
+      if (res.ok) setVestEditStatus({ ok: true, msg: "Vest uspešno sačuvana!" });
+      else        setVestEditStatus({ ok: false, msg: data.error ?? "Greška pri čuvanju." });
+    } catch {
+      setVestEditStatus({ ok: false, msg: "Greška pri čuvanju." });
+    } finally {
+      setVestEditSaving(false);
+    }
+  }
+
+  async function handleVestGalleryUpload() {
+    if (!vestEditData) return;
+    const files = vestGalleryRef.current?.files ? Array.from(vestGalleryRef.current.files) : [];
+    if (files.length === 0) { setVestGalleryStatus({ ok: false, msg: "Nema odabranih slika." }); return; }
+    setVestGallerySaving(true);
+    setVestGalleryStatus(null);
+    try {
+      const fd = new FormData();
+      fd.append("folder", vestEditData.folder);
+      fd.append("slug", vestEditData.slug);
+      files.forEach((f) => fd.append("gallery", f));
+      const res  = await fetch("/api/admin/vesti", { method: "PATCH", body: fd });
+      const data = await res.json();
+      if (res.ok) {
+        setVestGalleryStatus({ ok: true, msg: `${files.length} ${files.length === 1 ? "slika dodata" : "slika dodato"} u galeriju!` });
+        if (vestGalleryRef.current) vestGalleryRef.current.value = "";
+        fetchVestImages(vestEditData.slug, vestEditData.folder);
+      } else {
+        setVestGalleryStatus({ ok: false, msg: data.error ?? "Greška pri uploadu." });
+      }
+    } catch {
+      setVestGalleryStatus({ ok: false, msg: "Greška pri uploadu." });
+    } finally {
+      setVestGallerySaving(false);
+    }
+  }
+
+  async function handleVestDeleteImages() {
+    if (!vestEditData || vestDeleteSelected.size === 0) return;
+    setVestDeleting(true);
+    setVestDeleteStatus(null);
+    try {
+      const res = await fetch("/api/admin/vesti", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ folder: vestEditData.folder, slug: vestEditData.slug, images: Array.from(vestDeleteSelected) }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const count = vestDeleteSelected.size;
+        setVestDeleteSelected(new Set());
+        setVestDeleteStatus({ ok: true, msg: `${count} ${count === 1 ? "slika obrisana" : "slike obrisane"}.` });
+        fetchVestImages(vestEditData.slug, vestEditData.folder);
+      } else {
+        setVestDeleteStatus({ ok: false, msg: data.error ?? "Greška pri brisanju." });
+      }
+    } catch {
+      setVestDeleteStatus({ ok: false, msg: "Greška pri brisanju." });
+    } finally {
+      setVestDeleting(false);
+    }
+  }
+
+  async function fetchJuniorImages(slug: string, folder: string) {
+    setJuniorImagesLoading(true);
+    try {
+      const res = await fetch(`/api/admin/juniori?images=1&slug=${encodeURIComponent(slug)}&folder=${encodeURIComponent(folder)}`);
+      const data = await res.json();
+      setJuniorImages(data.images ?? []);
+    } catch {
+      setJuniorImages([]);
+    } finally {
+      setJuniorImagesLoading(false);
+    }
+  }
+
+  async function openJuniorEdit(item: BlogItem) {
+    setJuniorEditLoading(true);
+    setJuniorEditStatus(null);
+    setJuniorEditTitleError(null);
+    setJuniorEditTextError(null);
+    setJuniorImages([]);
+    setJuniorGalleryStatus(null);
+    setJuniorDeleteSelected(new Set());
+    setJuniorDeleteStatus(null);
+    setView("edit");
+    try {
+      const [juniorRes, imgRes] = await Promise.all([
+        fetch(`/api/admin/juniori?folder=${encodeURIComponent(item.folder)}&slug=${encodeURIComponent(item.slug)}`),
+        fetch(`/api/admin/juniori?images=1&slug=${encodeURIComponent(item.slug)}&folder=${encodeURIComponent(item.folder)}`),
+      ]);
+      const data = await juniorRes.json();
+      const imgData = await imgRes.json();
+      const images: string[] = imgData.images ?? [];
+      setJuniorImages(images);
+      const image = data.image || images[0] || "";
+      setJuniorEditData({ ...data, arhivirano: data.arhivirano ?? false, image });
+    } catch {
+      setJuniorEditStatus({ ok: false, msg: "Greška pri učitavanju objave." });
+    } finally {
+      setJuniorEditLoading(false);
+    }
+  }
+
+  async function handleJuniorEditSave() {
+    if (!juniorEditData) return;
+    const titleErr = validateTitle(juniorEditData.title);
+    if (titleErr) { setJuniorEditTitleError(titleErr); setJuniorEditStatus({ ok: false, msg: titleErr }); return; }
+    if (juniorEditData.text.trim().length < 20) { setJuniorEditTextError("Tekst mora imati najmanje 20 karaktera."); setJuniorEditStatus({ ok: false, msg: "Tekst mora imati najmanje 20 karaktera." }); return; }
+    setJuniorEditSaving(true);
+    setJuniorEditStatus(null);
+    try {
+      const res  = await fetch("/api/admin/juniori", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(juniorEditData) });
+      const data = await res.json();
+      if (res.ok) setJuniorEditStatus({ ok: true, msg: "Objava uspešno sačuvana!" });
+      else        setJuniorEditStatus({ ok: false, msg: data.error ?? "Greška pri čuvanju." });
+    } catch {
+      setJuniorEditStatus({ ok: false, msg: "Greška pri čuvanju." });
+    } finally {
+      setJuniorEditSaving(false);
+    }
+  }
+
+  async function handleJuniorGalleryUpload() {
+    if (!juniorEditData) return;
+    const files = juniorGalleryRef.current?.files ? Array.from(juniorGalleryRef.current.files) : [];
+    if (files.length === 0) { setJuniorGalleryStatus({ ok: false, msg: "Nema odabranih slika." }); return; }
+    setJuniorGallerySaving(true);
+    setJuniorGalleryStatus(null);
+    try {
+      const fd = new FormData();
+      fd.append("folder", juniorEditData.folder);
+      fd.append("slug", juniorEditData.slug);
+      files.forEach((f) => fd.append("gallery", f));
+      const res  = await fetch("/api/admin/juniori", { method: "PATCH", body: fd });
+      const data = await res.json();
+      if (res.ok) {
+        setJuniorGalleryStatus({ ok: true, msg: `${files.length} ${files.length === 1 ? "slika dodata" : "slika dodato"} u galeriju!` });
+        if (juniorGalleryRef.current) juniorGalleryRef.current.value = "";
+        fetchJuniorImages(juniorEditData.slug, juniorEditData.folder);
+      } else {
+        setJuniorGalleryStatus({ ok: false, msg: data.error ?? "Greška pri uploadu." });
+      }
+    } catch {
+      setJuniorGalleryStatus({ ok: false, msg: "Greška pri uploadu." });
+    } finally {
+      setJuniorGallerySaving(false);
+    }
+  }
+
+  async function handleJuniorDeleteImages() {
+    if (!juniorEditData || juniorDeleteSelected.size === 0) return;
+    setJuniorDeleting(true);
+    setJuniorDeleteStatus(null);
+    try {
+      const res = await fetch("/api/admin/juniori", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ folder: juniorEditData.folder, slug: juniorEditData.slug, images: Array.from(juniorDeleteSelected) }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const count = juniorDeleteSelected.size;
+        setJuniorDeleteSelected(new Set());
+        setJuniorDeleteStatus({ ok: true, msg: `${count} ${count === 1 ? "slika obrisana" : "slike obrisane"}.` });
+        fetchJuniorImages(juniorEditData.slug, juniorEditData.folder);
+      } else {
+        setJuniorDeleteStatus({ ok: false, msg: data.error ?? "Greška pri brisanju." });
+      }
+    } catch {
+      setJuniorDeleteStatus({ ok: false, msg: "Greška pri brisanju." });
+    } finally {
+      setJuniorDeleting(false);
+    }
+  }
+
   async function openClanEdit(item: ClanMember) {
     setClanEditLoading(true);
     setClanEditStatus(null);
@@ -585,7 +874,7 @@ export default function AdminPage() {
     try {
       const res  = await fetch(`/api/admin/clanovi?id=${item.id}`);
       const data = await res.json() as ClanMember;
-      setClanEditData({ id: data.id, name: data.name, bio: data.bio ?? "", image: data.image ?? "", arhivirano: data.arhivirano ?? false });
+      setClanEditData({ id: data.id, name: data.name, bio: data.bio ?? "", image: data.image ?? "", arhivirano: data.arhivirano ?? false, heroObjectPosition: data.heroObjectPosition ?? "50% 50%" });
     } catch {
       setClanEditStatus({ ok: false, msg: "Greška pri učitavanju člana." });
     } finally {
@@ -603,6 +892,7 @@ export default function AdminPage() {
       fd.append("name", clanEditData.name);
       fd.append("bio", clanEditData.bio);
       fd.append("arhivirano", String(clanEditData.arhivirano));
+      fd.append("heroObjectPosition", clanEditData.heroObjectPosition || "50% 50%");
       const newImage = clanEditImageRef.current?.files?.[0];
       if (newImage) fd.append("image", newImage);
 
@@ -611,6 +901,14 @@ export default function AdminPage() {
       if (res.ok) {
         setClanEditStatus({ ok: true, msg: "Član uspešno sačuvan!" });
         if (clanEditImageRef.current) clanEditImageRef.current.value = "";
+        // Ako je uploadovana nova slika, refreshuj image path iz podataka
+        if (newImage) {
+          const refreshed = await fetch(`/api/admin/clanovi?id=${clanEditData.id}`);
+          if (refreshed.ok) {
+            const refreshedData = await refreshed.json() as ClanMember;
+            setClanEditData((p) => p ? { ...p, image: refreshedData.image ?? "" } : p);
+          }
+        }
       } else {
         setClanEditStatus({ ok: false, msg: data.error ?? "Greška pri čuvanju." });
       }
@@ -676,8 +974,10 @@ export default function AdminPage() {
         if (res.ok) { setStatus({ ok: true, msg: "Član uspešno dodat!" }); resetForm(); }
         else         setStatus({ ok: false, msg: data.error ?? "Greška pri uploadu." });
 
-      } else if (activeSection === "blog" || activeSection === "dogadjaji") {
-        const isDog = activeSection === "dogadjaji";
+      } else if (activeSection === "blog" || activeSection === "dogadjaji" || activeSection === "vesti" || activeSection === "juniori") {
+        const isDog    = activeSection === "dogadjaji";
+        const isVest   = activeSection === "vesti";
+        const isJunior = activeSection === "juniori";
         const title        = titleRef.current?.value.trim()   ?? "";
         const author       = authorRef.current?.value.trim()  ?? "";
         const date         = dateRef.current?.value            ?? today;
@@ -693,11 +993,11 @@ export default function AdminPage() {
         if (text.length < 20) { setTextError("Tekst mora imati najmanje 20 karaktera."); setStatus({ ok: false, msg: "Tekst mora imati najmanje 20 karaktera." }); return; }
 
         // Provera duplikata (klijentska)
-        const itemsToCheck = isDog ? dogItems : blogItems;
+        const itemsToCheck = isDog ? dogItems : isVest ? vestItems : isJunior ? juniorItems : blogItems;
         if (itemsToCheck.length > 0) {
           const newSlug = toSlugClient(title);
           if (itemsToCheck.some((b) => b.slug === newSlug)) {
-            setStatus({ ok: false, msg: `${isDog ? "Događaj" : "Blog"} sa naslovom "${title}" već postoji.` });
+            setStatus({ ok: false, msg: `${isDog ? "Događaj" : isVest ? "Vest" : isJunior ? "Objava" : "Blog"} sa naslovom "${title}" već postoji.` });
             return;
           }
         }
@@ -727,10 +1027,10 @@ export default function AdminPage() {
         if (mainImage) fd.append("mainImage", mainImage);
         galleryFiles.forEach((f) => fd.append("gallery", f));
 
-        const endpoint = isDog ? "/api/admin/dogadjaji" : "/api/admin/blog";
+        const endpoint = isDog ? "/api/admin/dogadjaji" : isVest ? "/api/admin/vesti" : isJunior ? "/api/admin/juniori" : "/api/admin/blog";
         const res  = await fetch(endpoint, { method: "POST", body: fd });
         const data = await res.json();
-        if (res.ok) { setStatus({ ok: true, msg: isDog ? "Događaj uspešno dodat!" : "Blog post uspešno dodat!" }); resetForm(); }
+        if (res.ok) { setStatus({ ok: true, msg: isDog ? "Događaj uspešno dodat!" : isVest ? "Vest uspešno dodata!" : isJunior ? "Objava uspešno dodata!" : "Blog post uspešno dodat!" }); resetForm(); }
         else         setStatus({ ok: false, msg: data.error ?? "Greška pri uploadu." });
       }
     } catch {
@@ -790,6 +1090,46 @@ export default function AdminPage() {
         .then((data) => setDeleteDogItems(data.items ?? []))
         .catch(() => setDeleteDogError(true))
         .finally(() => setDeleteDogLoading(false));
+    }
+    if (view === "list" && activeSection === "vesti") {
+      setVestLoading(true);
+      setVestError(false);
+      setVestSearch("");
+      fetch("/api/admin/vesti")
+        .then((r) => r.json())
+        .then((data) => setVestItems(data.items ?? []))
+        .catch(() => setVestError(true))
+        .finally(() => setVestLoading(false));
+    }
+    if (view === "delete" && activeSection === "vesti") {
+      setDeleteVestLoading(true);
+      setDeleteVestError(false);
+      setDeleteVestSearch("");
+      fetch("/api/admin/vesti")
+        .then((r) => r.json())
+        .then((data) => setDeleteVestItems(data.items ?? []))
+        .catch(() => setDeleteVestError(true))
+        .finally(() => setDeleteVestLoading(false));
+    }
+    if (view === "list" && activeSection === "juniori") {
+      setJuniorLoading(true);
+      setJuniorError(false);
+      setJuniorSearch("");
+      fetch("/api/admin/juniori")
+        .then((r) => r.json())
+        .then((data) => setJuniorItems(data.items ?? []))
+        .catch(() => setJuniorError(true))
+        .finally(() => setJuniorLoading(false));
+    }
+    if (view === "delete" && activeSection === "juniori") {
+      setDeleteJuniorLoading(true);
+      setDeleteJuniorError(false);
+      setDeleteJuniorSearch("");
+      fetch("/api/admin/juniori")
+        .then((r) => r.json())
+        .then((data) => setDeleteJuniorItems(data.items ?? []))
+        .catch(() => setDeleteJuniorError(true))
+        .finally(() => setDeleteJuniorLoading(false));
     }
     if (view === "list" && activeSection === "clanovi") {
       setClanLoading(true);
@@ -866,15 +1206,76 @@ export default function AdminPage() {
           setDeleteDogItems((prev) => prev.map((d) => d.slug === item.slug ? { ...d, arhivirano } : d));
           setDogItems((prev) => prev.map((d) => d.slug === item.slug ? { ...d, arhivirano } : d));
         }
-      } else {
+      } else if (kind === "vest") {
         const item = modal.item;
         if (type === "obrisi") {
+          const res = await fetch("/api/admin/vesti", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ folder: item.folder, slug: item.slug }),
+          });
+          if (res.ok) {
+            setDeleteVestItems((prev) => prev.filter((v) => v.slug !== item.slug));
+            setVestItems((prev) => prev.filter((v) => v.slug !== item.slug));
+          }
+        } else {
+          const getRes = await fetch(`/api/admin/vesti?folder=${encodeURIComponent(item.folder)}&slug=${encodeURIComponent(item.slug)}`);
+          const vestData = await getRes.json();
+          const arhivirano = type === "arhiviraj";
+          await fetch("/api/admin/vesti", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...vestData, arhivirano }),
+          });
+          setDeleteVestItems((prev) => prev.map((v) => v.slug === item.slug ? { ...v, arhivirano } : v));
+          setVestItems((prev) => prev.map((v) => v.slug === item.slug ? { ...v, arhivirano } : v));
+        }
+      } else if (kind === "junior") {
+        const item = modal.item;
+        if (type === "obrisi") {
+          const res = await fetch("/api/admin/juniori", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ folder: item.folder, slug: item.slug }),
+          });
+          if (res.ok) {
+            setDeleteJuniorItems((prev) => prev.filter((j) => j.slug !== item.slug));
+            setJuniorItems((prev) => prev.filter((j) => j.slug !== item.slug));
+          }
+        } else {
+          const getRes = await fetch(`/api/admin/juniori?folder=${encodeURIComponent(item.folder)}&slug=${encodeURIComponent(item.slug)}`);
+          const juniorData = await getRes.json();
+          const arhivirano = type === "arhiviraj";
+          await fetch("/api/admin/juniori", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...juniorData, arhivirano }),
+          });
+          setDeleteJuniorItems((prev) => prev.map((j) => j.slug === item.slug ? { ...j, arhivirano } : j));
+          setJuniorItems((prev) => prev.map((j) => j.slug === item.slug ? { ...j, arhivirano } : j));
+        }
+      } else {
+        const item = modal.item;
+        if (type === "obrisi-sliku") {
+          const res = await fetch("/api/admin/clanovi", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: item.id, imageOnly: true }),
+          });
+          if (res.ok) {
+            setClanEditData((p) => p ? { ...p, image: "" } : p);
+            setClanItems((prev) => prev.map((c) => c.id === item.id ? { ...c, image: "" } : c));
+          }
+        } else if (type === "obrisi") {
           const res = await fetch("/api/admin/clanovi", {
             method: "DELETE",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ id: item.id }),
           });
-          if (res.ok) setDeleteClanItems((prev) => prev.filter((c) => c.id !== item.id));
+          if (res.ok) {
+            setDeleteClanItems((prev) => prev.filter((c) => c.id !== item.id));
+            setClanItems((prev) => prev.filter((c) => c.id !== item.id));
+          }
         } else {
           const arhivirano = type === "arhiviraj";
           const fd = new FormData();
@@ -883,7 +1284,10 @@ export default function AdminPage() {
           fd.append("bio", item.bio ?? "");
           fd.append("arhivirano", String(arhivirano));
           const res = await fetch("/api/admin/clanovi", { method: "PUT", body: fd });
-          if (res.ok) setDeleteClanItems((prev) => prev.map((c) => c.id === item.id ? { ...c, arhivirano } : c));
+          if (res.ok) {
+            setDeleteClanItems((prev) => prev.map((c) => c.id === item.id ? { ...c, arhivirano } : c));
+            setClanItems((prev) => prev.map((c) => c.id === item.id ? { ...c, arhivirano } : c));
+          }
         }
       }
     } catch {
@@ -998,6 +1402,8 @@ export default function AdminPage() {
                   else if (view === "edit") {
                     if (activeSection === "clanovi") { setView("list"); setClanEditData(null); setClanEditStatus(null); }
                     else if (activeSection === "dogadjaji") { setView("list"); setDogEditData(null); setDogEditStatus(null); }
+                    else if (activeSection === "vesti") { setView("list"); setVestEditData(null); setVestEditStatus(null); }
+                    else if (activeSection === "juniori") { setView("list"); setJuniorEditData(null); setJuniorEditStatus(null); }
                     else { setView("list"); setEditData(null); setEditStatus(null); }
                   }
                   else navigate(null);
@@ -1015,7 +1421,7 @@ export default function AdminPage() {
                 {view === "add"      && navItem?.addLabel}
                 {view === "list"     && "Izmena sadržaja"}
                 {view === "delete"   && "Briši sadržaj"}
-                {view === "edit"     && (activeSection === "clanovi" ? (clanEditData?.name ?? "Uredi člana") : activeSection === "dogadjaji" ? (dogEditData?.title ?? "Uredi događaj") : (editData?.title ?? "Uredi blog"))}
+                {view === "edit"     && (activeSection === "clanovi" ? (clanEditData?.name ?? "Uredi člana") : activeSection === "dogadjaji" ? (dogEditData?.title ?? "Uredi događaj") : activeSection === "vesti" ? (vestEditData?.title ?? "Uredi vest") : activeSection === "juniori" ? (juniorEditData?.title ?? "Uredi objavu") : (editData?.title ?? "Uredi blog"))}
               </h1>
               {view === "overview" && navItem && (
                 <p className="text-xs text-gray-400 mt-0.5">{navItem.description}</p>
@@ -1034,6 +1440,12 @@ export default function AdminPage() {
               )}
               {view === "edit" && dogEditData && activeSection === "dogadjaji" && (
                 <p className="text-xs text-gray-400 mt-0.5">{dogEditData.date || ""}{dogEditData.author ? ` · ${dogEditData.author}` : ""}</p>
+              )}
+              {view === "edit" && vestEditData && activeSection === "vesti" && (
+                <p className="text-xs text-gray-400 mt-0.5">{vestEditData.date || ""}{vestEditData.author ? ` · ${vestEditData.author}` : ""}</p>
+              )}
+              {view === "edit" && juniorEditData && activeSection === "juniori" && (
+                <p className="text-xs text-gray-400 mt-0.5">{juniorEditData.date || ""}{juniorEditData.author ? ` · ${juniorEditData.author}` : ""}</p>
               )}
               {view === "edit" && clanEditData && activeSection === "clanovi" && (
                 <p className="text-xs text-gray-400 mt-0.5">Član</p>
@@ -1135,7 +1547,7 @@ export default function AdminPage() {
 
                 {/* Izmena sadržaja */}
                 {(() => {
-                  const canList = activeSection === "blog" || activeSection === "dogadjaji" || activeSection === "clanovi";
+                  const canList = activeSection === "blog" || activeSection === "dogadjaji" || activeSection === "clanovi" || activeSection === "vesti" || activeSection === "juniori";
                   return (
                     <button
                       onClick={() => canList && setView("list")}
@@ -1168,7 +1580,7 @@ export default function AdminPage() {
 
                 {/* Briši sadržaj */}
                 {(() => {
-                  const canDelete = activeSection === "blog" || activeSection === "dogadjaji" || activeSection === "clanovi";
+                  const canDelete = activeSection === "blog" || activeSection === "dogadjaji" || activeSection === "clanovi" || activeSection === "vesti" || activeSection === "juniori";
                   return (
                     <button
                       onClick={() => canDelete && setView("delete")}
@@ -1303,6 +1715,134 @@ export default function AdminPage() {
           )}
 
           {/* ---- LIST / IZMENA — DOGADJAJI ---- */}
+          {/* ---- LIST / IZMENA — VESTI ---- */}
+          {view === "list" && activeSection === "vesti" && (
+            <div className="space-y-4">
+              <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 flex items-center gap-3">
+                <div className="relative flex-1">
+                  <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden="true">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                  </svg>
+                  <input
+                    type="text"
+                    value={vestSearch}
+                    onChange={(e) => setVestSearch(e.target.value)}
+                    placeholder="Pretraži po naslovu..."
+                    className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0056b3] focus:border-transparent transition"
+                  />
+                </div>
+                {vestSearch && (
+                  <button onClick={() => setVestSearch("")} className="text-xs text-gray-400 hover:text-gray-700 px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0">Obriši</button>
+                )}
+              </div>
+              <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                <div className="grid grid-cols-12 gap-4 px-5 py-3 bg-gray-50 border-b border-gray-100 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                  <div className="col-span-5">Naslov</div>
+                  <div className="col-span-2 hidden sm:block">Datum</div>
+                  <div className="col-span-3 hidden md:block">Autor</div>
+                  <div className="col-span-2 text-right">Akcija</div>
+                </div>
+                {vestLoading && [1, 2, 3].map((i) => (
+                  <div key={i} className="grid grid-cols-12 gap-4 px-5 py-4 border-b border-gray-50 items-center animate-pulse">
+                    <div className="col-span-5"><div className="h-3.5 bg-gray-100 rounded-full w-3/4" /></div>
+                    <div className="col-span-2 hidden sm:block"><div className="h-3 bg-gray-100 rounded-full" /></div>
+                    <div className="col-span-3 hidden md:block"><div className="h-3 bg-gray-100 rounded-full w-2/3" /></div>
+                    <div className="col-span-2 flex justify-end"><div className="h-7 w-16 bg-gray-100 rounded-lg" /></div>
+                  </div>
+                ))}
+                {!vestLoading && vestItems.filter((v) => v.title.toLowerCase().includes(vestSearch.toLowerCase())).map((item) => (
+                  <div key={item.slug} className="grid grid-cols-12 gap-4 px-5 py-4 border-b border-gray-50 items-center hover:bg-gray-50 transition-colors">
+                    <div className="col-span-5">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{item.title}</p>
+                      {item.excerpt && <p className="text-xs text-gray-400 truncate mt-0.5">{item.excerpt}</p>}
+                    </div>
+                    <div className="col-span-2 hidden sm:block text-sm text-gray-500">{item.date || "—"}</div>
+                    <div className="col-span-3 hidden md:block text-sm text-gray-500 truncate">{item.author || "—"}</div>
+                    <div className="col-span-2 flex justify-end gap-2">
+                      {item.arhivirano ? (
+                        <button onClick={() => setModal({ type: "vrati", kind: "vest", item })} className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition-colors whitespace-nowrap">Vrati</button>
+                      ) : (
+                        <button onClick={() => setModal({ type: "arhiviraj", kind: "vest", item })} className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors whitespace-nowrap">Arhiviraj</button>
+                      )}
+                      <button onClick={() => openVestEdit(item)} className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#e8f0fb] text-[#0056b3] hover:bg-[#0056b3] hover:text-white transition-colors">Izaberi</button>
+                    </div>
+                  </div>
+                ))}
+                {!vestLoading && !vestError && vestItems.filter((v) => v.title.toLowerCase().includes(vestSearch.toLowerCase())).length === 0 && (
+                  <div className="px-5 py-12 text-center">
+                    <div className="w-12 h-12 rounded-2xl bg-gray-100 text-gray-300 flex items-center justify-center mx-auto mb-3"><IcoList /></div>
+                    <p className="text-sm font-semibold text-gray-400">{vestSearch ? `Nema rezultata za "${vestSearch}"` : "Nema vesti"}</p>
+                    <p className="text-xs text-gray-400 mt-1">{vestSearch ? "Pokušaj drugi pojam za pretragu." : "Dodaj prvu vest."}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ---- LIST / IZMENA — JUNIORI ---- */}
+          {view === "list" && activeSection === "juniori" && (
+            <div className="space-y-4">
+              <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 flex items-center gap-3">
+                <div className="relative flex-1">
+                  <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden="true">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                  </svg>
+                  <input
+                    type="text"
+                    value={juniorSearch}
+                    onChange={(e) => setJuniorSearch(e.target.value)}
+                    placeholder="Pretraži po naslovu..."
+                    className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0056b3] focus:border-transparent transition"
+                  />
+                </div>
+                {juniorSearch && (
+                  <button onClick={() => setJuniorSearch("")} className="text-xs text-gray-400 hover:text-gray-700 px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0">Obriši</button>
+                )}
+              </div>
+              <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                <div className="grid grid-cols-12 gap-4 px-5 py-3 bg-gray-50 border-b border-gray-100 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                  <div className="col-span-5">Naslov</div>
+                  <div className="col-span-2 hidden sm:block">Datum</div>
+                  <div className="col-span-3 hidden md:block">Autor</div>
+                  <div className="col-span-2 text-right">Akcija</div>
+                </div>
+                {juniorLoading && [1, 2, 3].map((i) => (
+                  <div key={i} className="grid grid-cols-12 gap-4 px-5 py-4 border-b border-gray-50 items-center animate-pulse">
+                    <div className="col-span-5"><div className="h-3.5 bg-gray-100 rounded-full w-3/4" /></div>
+                    <div className="col-span-2 hidden sm:block"><div className="h-3 bg-gray-100 rounded-full" /></div>
+                    <div className="col-span-3 hidden md:block"><div className="h-3 bg-gray-100 rounded-full w-2/3" /></div>
+                    <div className="col-span-2 flex justify-end"><div className="h-7 w-16 bg-gray-100 rounded-lg" /></div>
+                  </div>
+                ))}
+                {!juniorLoading && juniorItems.filter((j) => j.title.toLowerCase().includes(juniorSearch.toLowerCase())).map((item) => (
+                  <div key={item.slug} className="grid grid-cols-12 gap-4 px-5 py-4 border-b border-gray-50 items-center hover:bg-gray-50 transition-colors">
+                    <div className="col-span-5">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{item.title}</p>
+                      {item.excerpt && <p className="text-xs text-gray-400 truncate mt-0.5">{item.excerpt}</p>}
+                    </div>
+                    <div className="col-span-2 hidden sm:block text-sm text-gray-500">{item.date || "—"}</div>
+                    <div className="col-span-3 hidden md:block text-sm text-gray-500 truncate">{item.author || "—"}</div>
+                    <div className="col-span-2 flex justify-end gap-2">
+                      {item.arhivirano ? (
+                        <button onClick={() => setModal({ type: "vrati", kind: "junior", item })} className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition-colors whitespace-nowrap">Vrati</button>
+                      ) : (
+                        <button onClick={() => setModal({ type: "arhiviraj", kind: "junior", item })} className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors whitespace-nowrap">Arhiviraj</button>
+                      )}
+                      <button onClick={() => openJuniorEdit(item)} className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#e8f0fb] text-[#0056b3] hover:bg-[#0056b3] hover:text-white transition-colors">Izaberi</button>
+                    </div>
+                  </div>
+                ))}
+                {!juniorLoading && !juniorError && juniorItems.filter((j) => j.title.toLowerCase().includes(juniorSearch.toLowerCase())).length === 0 && (
+                  <div className="px-5 py-12 text-center">
+                    <div className="w-12 h-12 rounded-2xl bg-gray-100 text-gray-300 flex items-center justify-center mx-auto mb-3"><IcoList /></div>
+                    <p className="text-sm font-semibold text-gray-400">{juniorSearch ? `Nema rezultata za "${juniorSearch}"` : "Nema objava"}</p>
+                    <p className="text-xs text-gray-400 mt-1">{juniorSearch ? "Pokušaj drugi pojam za pretragu." : "Dodaj prvu objavu."}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {view === "list" && activeSection === "dogadjaji" && (
             <div className="space-y-4">
               <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 flex items-center gap-3">
@@ -1389,31 +1929,50 @@ export default function AdminPage() {
 
               <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
                 <div className="grid grid-cols-12 gap-4 px-5 py-3 bg-gray-50 border-b border-gray-100 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                  <div className="col-span-5">Ime</div>
-                  <div className="col-span-4 hidden sm:block">Uloga</div>
-                  <div className="col-span-3 text-right">Akcija</div>
+                  <div className="col-span-4">Ime</div>
+                  <div className="col-span-3 hidden sm:block">Uloga</div>
+                  <div className="col-span-5 text-right">Akcija</div>
                 </div>
 
                 {clanLoading && [1, 2, 3].map((i) => (
                   <div key={i} className="grid grid-cols-12 gap-4 px-5 py-4 border-b border-gray-50 items-center animate-pulse">
-                    <div className="col-span-5"><div className="h-3.5 bg-gray-100 rounded-full w-3/4" /></div>
-                    <div className="col-span-4 hidden sm:block"><div className="h-3 bg-gray-100 rounded-full w-2/3" /></div>
-                    <div className="col-span-3 flex justify-end"><div className="h-7 w-16 bg-gray-100 rounded-lg" /></div>
+                    <div className="col-span-4"><div className="h-3.5 bg-gray-100 rounded-full w-3/4" /></div>
+                    <div className="col-span-3 hidden sm:block"><div className="h-3 bg-gray-100 rounded-full w-2/3" /></div>
+                    <div className="col-span-5 flex justify-end gap-2">
+                      <div className="h-7 w-20 bg-gray-100 rounded-lg" />
+                      <div className="h-7 w-20 bg-gray-100 rounded-lg" />
+                    </div>
                   </div>
                 ))}
 
                 {!clanLoading && clanItems.filter((c) => c.name.toLowerCase().includes(clanSearch.toLowerCase())).map((item) => (
                   <div key={item.id} className="grid grid-cols-12 gap-4 px-5 py-4 border-b border-gray-50 items-center hover:bg-gray-50 transition-colors">
-                    <div className="col-span-5">
+                    <div className="col-span-4">
                       <p className="text-sm font-semibold text-gray-900 truncate">{item.name}</p>
+                      {item.arhivirano && <span className="text-[10px] font-semibold text-amber-600">Arhivirano</span>}
                     </div>
-                    <div className="col-span-4 hidden sm:block text-sm text-gray-500 truncate">{item.role || "—"}</div>
-                    <div className="col-span-3 flex justify-end">
+                    <div className="col-span-3 hidden sm:block text-sm text-gray-500 truncate">{item.role || "—"}</div>
+                    <div className="col-span-5 flex justify-end gap-2">
+                      {item.arhivirano ? (
+                        <button
+                          onClick={() => setModal({ type: "vrati", kind: "clan", item })}
+                          className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition-colors whitespace-nowrap"
+                        >
+                          Vrati
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => setModal({ type: "arhiviraj", kind: "clan", item })}
+                          className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors whitespace-nowrap"
+                        >
+                          Arhiviraj
+                        </button>
+                      )}
                       <button
                         onClick={() => openClanEdit(item)}
-                        className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#e8f0fb] text-[#0056b3] hover:bg-[#0056b3] hover:text-white transition-colors"
+                        className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#e8f0fb] text-[#0056b3] hover:bg-[#0056b3] hover:text-white transition-colors whitespace-nowrap"
                       >
-                        Izaberi
+                        Uredi
                       </button>
                     </div>
                   </div>
@@ -1535,6 +2094,130 @@ export default function AdminPage() {
           )}
 
           {/* ---- DELETE — DOGADJAJI ---- */}
+          {/* ---- DELETE — VESTI ---- */}
+          {view === "delete" && activeSection === "vesti" && (
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3.5">
+                <svg width="18" height="18" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" className="flex-shrink-0 mt-0.5" aria-hidden="true">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                <div>
+                  <p className="text-sm font-semibold text-amber-700">Pažnja — brisanje je nepovratno</p>
+                  <p className="text-xs text-amber-600 mt-0.5">Obrisana vest i sve njene slike ne mogu se povratiti. Svaka stavka zahteva potvrdu pre brisanja.</p>
+                </div>
+              </div>
+              <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 flex items-center gap-3">
+                <div className="relative flex-1">
+                  <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden="true">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                  </svg>
+                  <input type="text" value={deleteVestSearch} onChange={(e) => setDeleteVestSearch(e.target.value)} placeholder="Pretraži po naslovu..."
+                    className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0056b3] focus:border-transparent transition" />
+                </div>
+                {deleteVestSearch && <button onClick={() => setDeleteVestSearch("")} className="text-xs text-gray-400 hover:text-gray-700 px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0">Obriši</button>}
+              </div>
+              <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                <div className="grid grid-cols-12 gap-4 px-5 py-3 bg-gray-50 border-b border-gray-100 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                  <div className="col-span-5">Naslov</div>
+                  <div className="col-span-2 hidden sm:block">Datum</div>
+                  <div className="col-span-5 text-right">Akcija</div>
+                </div>
+                {deleteVestLoading && [1, 2, 3].map((i) => (
+                  <div key={i} className="grid grid-cols-12 gap-4 px-5 py-4 border-b border-gray-50 items-center animate-pulse">
+                    <div className="col-span-5"><div className="h-3.5 bg-gray-100 rounded-full w-3/4" /></div>
+                    <div className="col-span-2 hidden sm:block"><div className="h-3 bg-gray-100 rounded-full" /></div>
+                    <div className="col-span-5 flex justify-end gap-2"><div className="h-7 w-20 bg-gray-100 rounded-lg" /><div className="h-7 w-16 bg-red-50 rounded-lg" /></div>
+                  </div>
+                ))}
+                {!deleteVestLoading && deleteVestItems.filter((v) => v.title.toLowerCase().includes(deleteVestSearch.toLowerCase())).map((item) => (
+                  <div key={item.slug} className="grid grid-cols-12 gap-4 px-5 py-4 border-b border-gray-50 items-center hover:bg-gray-50 transition-colors">
+                    <div className="col-span-5">
+                      {item.arhivirano && <span className="inline-block text-[9px] font-bold bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full mb-1">Arhivirano</span>}
+                      <p className="text-sm font-semibold text-gray-900 truncate">{item.title}</p>
+                    </div>
+                    <div className="col-span-2 hidden sm:block text-sm text-gray-500">{item.date || "—"}</div>
+                    <div className="col-span-5 flex justify-end gap-2">
+                      {item.arhivirano ? (
+                        <button onClick={() => setModal({ type: "vrati", kind: "vest", item })} className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition-colors whitespace-nowrap">Vrati</button>
+                      ) : (
+                        <button onClick={() => setModal({ type: "arhiviraj", kind: "vest", item })} className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors whitespace-nowrap">Arhiviraj</button>
+                      )}
+                      <button onClick={() => setModal({ type: "obrisi", kind: "vest", item })} className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-500 hover:text-white transition-colors whitespace-nowrap">Obriši</button>
+                    </div>
+                  </div>
+                ))}
+                {!deleteVestLoading && !deleteVestError && deleteVestItems.filter((v) => v.title.toLowerCase().includes(deleteVestSearch.toLowerCase())).length === 0 && (
+                  <div className="px-5 py-12 text-center">
+                    <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-300 flex items-center justify-center mx-auto mb-3"><IcoTrash /></div>
+                    <p className="text-sm font-semibold text-gray-400">{deleteVestSearch ? `Nema rezultata za "${deleteVestSearch}"` : "Nema vesti"}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ---- DELETE — JUNIORI ---- */}
+          {view === "delete" && activeSection === "juniori" && (
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3.5">
+                <svg width="18" height="18" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" className="flex-shrink-0 mt-0.5" aria-hidden="true">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                <div>
+                  <p className="text-sm font-semibold text-amber-700">Pažnja — brisanje je nepovratno</p>
+                  <p className="text-xs text-amber-600 mt-0.5">Obrisana objava i sve njene slike ne mogu se povratiti. Svaka stavka zahteva potvrdu pre brisanja.</p>
+                </div>
+              </div>
+              <div className="bg-white rounded-xl border border-gray-100 px-4 py-3 flex items-center gap-3">
+                <div className="relative flex-1">
+                  <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden="true">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                  </svg>
+                  <input type="text" value={deleteJuniorSearch} onChange={(e) => setDeleteJuniorSearch(e.target.value)} placeholder="Pretraži po naslovu..."
+                    className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0056b3] focus:border-transparent transition" />
+                </div>
+                {deleteJuniorSearch && <button onClick={() => setDeleteJuniorSearch("")} className="text-xs text-gray-400 hover:text-gray-700 px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0">Obriši</button>}
+              </div>
+              <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                <div className="grid grid-cols-12 gap-4 px-5 py-3 bg-gray-50 border-b border-gray-100 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                  <div className="col-span-5">Naslov</div>
+                  <div className="col-span-2 hidden sm:block">Datum</div>
+                  <div className="col-span-5 text-right">Akcija</div>
+                </div>
+                {deleteJuniorLoading && [1, 2, 3].map((i) => (
+                  <div key={i} className="grid grid-cols-12 gap-4 px-5 py-4 border-b border-gray-50 items-center animate-pulse">
+                    <div className="col-span-5"><div className="h-3.5 bg-gray-100 rounded-full w-3/4" /></div>
+                    <div className="col-span-2 hidden sm:block"><div className="h-3 bg-gray-100 rounded-full" /></div>
+                    <div className="col-span-5 flex justify-end gap-2"><div className="h-7 w-20 bg-gray-100 rounded-lg" /><div className="h-7 w-16 bg-red-50 rounded-lg" /></div>
+                  </div>
+                ))}
+                {!deleteJuniorLoading && deleteJuniorItems.filter((j) => j.title.toLowerCase().includes(deleteJuniorSearch.toLowerCase())).map((item) => (
+                  <div key={item.slug} className="grid grid-cols-12 gap-4 px-5 py-4 border-b border-gray-50 items-center hover:bg-gray-50 transition-colors">
+                    <div className="col-span-5">
+                      {item.arhivirano && <span className="inline-block text-[9px] font-bold bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full mb-1">Arhivirano</span>}
+                      <p className="text-sm font-semibold text-gray-900 truncate">{item.title}</p>
+                    </div>
+                    <div className="col-span-2 hidden sm:block text-sm text-gray-500">{item.date || "—"}</div>
+                    <div className="col-span-5 flex justify-end gap-2">
+                      {item.arhivirano ? (
+                        <button onClick={() => setModal({ type: "vrati", kind: "junior", item })} className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition-colors whitespace-nowrap">Vrati</button>
+                      ) : (
+                        <button onClick={() => setModal({ type: "arhiviraj", kind: "junior", item })} className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors whitespace-nowrap">Arhiviraj</button>
+                      )}
+                      <button onClick={() => setModal({ type: "obrisi", kind: "junior", item })} className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-500 hover:text-white transition-colors whitespace-nowrap">Obriši</button>
+                    </div>
+                  </div>
+                ))}
+                {!deleteJuniorLoading && !deleteJuniorError && deleteJuniorItems.filter((j) => j.title.toLowerCase().includes(deleteJuniorSearch.toLowerCase())).length === 0 && (
+                  <div className="px-5 py-12 text-center">
+                    <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-300 flex items-center justify-center mx-auto mb-3"><IcoTrash /></div>
+                    <p className="text-sm font-semibold text-gray-400">{deleteJuniorSearch ? `Nema rezultata za "${deleteJuniorSearch}"` : "Nema objava"}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {view === "delete" && activeSection === "dogadjaji" && (
             <div className="space-y-4">
               <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3.5">
@@ -1727,24 +2410,85 @@ export default function AdminPage() {
                       </div>
                     </div>
 
-                    {/* Desna kolona — fotografija */}
-                    <div className="w-full lg:w-64 flex-shrink-0 bg-white rounded-xl border border-gray-100 p-5 space-y-4">
-                      <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Fotografija</p>
-                      {clanEditData.image && (
-                        <p className="text-xs text-gray-500 leading-relaxed break-all">
-                          Trenutna: <span className="font-medium text-gray-700">{clanEditData.image.split("/").pop()}</span>
-                        </p>
-                      )}
-                      <input
-                        ref={clanEditImageRef}
-                        type="file"
-                        accept="image/*"
-                        className={fileCls}
-                      />
-                      <div className="space-y-1.5">
-                        <p className="text-xs text-gray-500 leading-relaxed">
-                          Ako izaberete novu fotografiju, prethodna će biti automatski zamenjena.
-                        </p>
+                    {/* Desna kolona */}
+                    <div className="w-full lg:w-72 flex-shrink-0 space-y-4">
+                      {/* Detalji */}
+                      <div className="bg-white rounded-xl border border-gray-100 p-5 space-y-4">
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Detalji</p>
+                        <label className="flex items-center gap-3 cursor-pointer select-none group">
+                          <input
+                            type="checkbox"
+                            checked={clanEditData.arhivirano}
+                            onChange={(e) => setClanEditData((p) => p && ({ ...p, arhivirano: e.target.checked }))}
+                            className="w-4 h-4 rounded border-gray-300 text-[#0056b3] accent-[#0056b3] cursor-pointer"
+                          />
+                          <span className="text-sm font-semibold text-gray-700">Arhivirano</span>
+                          {clanEditData.arhivirano && <span className="text-xs text-amber-600 font-medium">— neće biti vidljivo</span>}
+                        </label>
+                      </div>
+
+                      {/* Fotografija */}
+                      <div className="bg-white rounded-xl border border-gray-100 p-5 space-y-4">
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Fotografija</p>
+
+                        {/* Preview + fokus */}
+                        {clanEditData.image ? (
+                          <div className="space-y-3">
+                            <div className="flex gap-4 items-start">
+                              <div className="grid grid-cols-5 gap-0.5 flex-shrink-0">
+                                {Array.from({ length: 5 }, (_, row) =>
+                                  Array.from({ length: 5 }, (_, col) => {
+                                    const pos = `${col * 25}% ${row * 25}%`;
+                                    const current = clanEditData.heroObjectPosition || "50% 50%";
+                                    const active = current === pos;
+                                    return (
+                                      <button key={pos} type="button" title={pos}
+                                        onClick={() => setClanEditData((p) => p && ({ ...p, heroObjectPosition: pos }))}
+                                        className={`w-6 h-6 rounded-sm transition-colors flex items-center justify-center ${active ? "bg-[#0056b3]" : "bg-gray-100 hover:bg-gray-300"}`}>
+                                        <span className={`w-1.5 h-1.5 rounded-full ${active ? "bg-white" : "bg-gray-400"}`} />
+                                      </button>
+                                    );
+                                  })
+                                )}
+                              </div>
+                              <div className="relative w-24 h-24 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={clanEditData.image}
+                                  alt=""
+                                  className="w-full h-full object-cover"
+                                  style={{ objectPosition: clanEditData.heroObjectPosition || "50% 50%" }}
+                                />
+                              </div>
+                            </div>
+                            <p className="text-[11px] text-gray-400 leading-relaxed">Klikni na mrežu da podeziš fokus fotografije.</p>
+                            <button
+                              type="button"
+                              onClick={() => setModal({ type: "obrisi-sliku", kind: "clan", item: { id: clanEditData.id, name: clanEditData.name, role: "", image: clanEditData.image, bio: clanEditData.bio, arhivirano: clanEditData.arhivirano } })}
+                              className="w-full px-3 py-2 text-xs font-semibold text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+                            >
+                              Obriši fotografiju
+                            </button>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-gray-400">Nema fotografije — biće prikazana podrazumevana.</p>
+                        )}
+
+                        {/* Upload */}
+                        <div className="space-y-1.5 pt-1">
+                          <p className="text-xs font-semibold text-gray-600">{clanEditData.image ? "Zameni fotografiju" : "Dodaj fotografiju"}</p>
+                          <input
+                            ref={clanEditImageRef}
+                            type="file"
+                            accept=".jpg,.jpeg,.png"
+                            className={fileCls}
+                          />
+                          {clanEditData.image && (
+                            <p className="text-[11px] text-gray-400 leading-relaxed">
+                              Nova fotografija automatski zamenjuje prethodnu.
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1774,6 +2518,454 @@ export default function AdminPage() {
                       className="px-6 py-2.5 bg-[#0056b3] text-white text-sm font-bold rounded-lg hover:bg-[#003d80] transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
                     >
                       {clanEditSaving ? "Čuvanje..." : "Sačuvaj izmene"}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* ---- EDIT VESTI ---- */}
+          {view === "edit" && activeSection === "vesti" && (
+            <div className="flex flex-col gap-4">
+              {vestEditLoading && (
+                <div className="flex items-center gap-2 text-sm text-gray-400 py-4">
+                  <svg className="animate-spin" width="16" height="16" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+                  </svg>
+                  Učitavanje sadržaja...
+                </div>
+              )}
+              {!vestEditLoading && vestEditData && (
+                <>
+                  <div className="flex flex-col xl:flex-row gap-4 xl:items-start">
+                    <div className="flex-1 min-w-0 bg-white rounded-xl border border-gray-100 p-6 space-y-5">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Naslov <span className="text-red-400">*</span></label>
+                        <input type="text" value={vestEditData.title} maxLength={100}
+                          className={inputCls + (vestEditTitleError ? " !border-red-400 !ring-red-300" : "")}
+                          onChange={(e) => { setVestEditData((p) => p && ({ ...p, title: e.target.value })); setVestEditTitleError(validateTitle(e.target.value)); }} />
+                        <div className="flex justify-between mt-1">
+                          {vestEditTitleError ? <p className="text-xs text-red-500">{vestEditTitleError}</p> : <span />}
+                          <p className={`text-xs ml-auto ${vestEditData.title.length > 90 ? "text-amber-500" : "text-gray-400"}`}>{vestEditData.title.length}/100</p>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Tekst <span className="text-red-400">*</span></label>
+                        <textarea rows={18} value={vestEditData.text}
+                          className={textareaCls + (vestEditTextError ? " !border-red-400 !ring-red-300" : "")}
+                          onChange={(e) => { setVestEditData((p) => p && ({ ...p, text: e.target.value })); if (e.target.value.trim().length >= 20) setVestEditTextError(null); }}
+                          onBlur={(e) => { if (e.target.value.trim().length > 0 && e.target.value.trim().length < 20) setVestEditTextError("Tekst mora imati najmanje 20 karaktera."); }} />
+                        {vestEditTextError && <p className="mt-1 text-xs text-red-500">{vestEditTextError}</p>}
+                      </div>
+                    </div>
+                    <div className="w-full xl:w-72 2xl:w-80 flex-shrink-0 space-y-4">
+                      <div className="bg-white rounded-xl border border-gray-100 p-5 space-y-4">
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Detalji</p>
+                        <label className="flex items-center gap-3 cursor-pointer select-none group">
+                          <input type="checkbox" checked={vestEditData.arhivirano}
+                            onChange={(e) => setVestEditData((p) => p && ({ ...p, arhivirano: e.target.checked }))}
+                            className="w-4 h-4 rounded border-gray-300 text-[#0056b3] accent-[#0056b3] cursor-pointer" />
+                          <span className="text-sm font-semibold text-gray-700">Arhivirano</span>
+                          {vestEditData.arhivirano && <span className="text-xs text-amber-600 font-medium">— neće biti vidljivo</span>}
+                        </label>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1.5">Autor</label>
+                          <input type="text" value={vestEditData.author}
+                            onChange={(e) => setVestEditData((p) => p && ({ ...p, author: e.target.value }))}
+                            className={inputCls} placeholder="Diaverzum Novi Sad" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1.5">Datum objave <span className="text-red-400">*</span></label>
+                          <input type="date" value={vestEditData.date}
+                            onChange={(e) => setVestEditData((p) => p && ({ ...p, date: e.target.value }))}
+                            className={inputCls} />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1.5">Layout glavne slike <span className="text-red-400">*</span></label>
+                          <select value={vestEditData.heroLayout}
+                            onChange={(e) => setVestEditData((p) => p && ({ ...p, heroLayout: e.target.value }))}
+                            className={inputCls}>
+                            <option value="top">Landscape — slika gore, tekst ispod</option>
+                            <option value="float">Portret — slika levo, tekst teče oko nje</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1.5">Fokus glavne slike</label>
+                          <div className="flex gap-4 items-start">
+                            <div className="grid grid-cols-5 gap-0.5 flex-shrink-0">
+                              {Array.from({ length: 5 }, (_, row) =>
+                                Array.from({ length: 5 }, (_, col) => {
+                                  const pos = `${col * 25}% ${row * 25}%`;
+                                  const current = vestEditData.heroObjectPosition || "50% 50%";
+                                  const active = current === pos;
+                                  return (
+                                    <button key={pos} type="button" title={pos}
+                                      onClick={() => setVestEditData((p) => p && ({ ...p, heroObjectPosition: pos }))}
+                                      className={`w-6 h-6 rounded-sm transition-colors flex items-center justify-center ${active ? "bg-[#0056b3]" : "bg-gray-100 hover:bg-gray-300"}`}>
+                                      <span className={`w-1.5 h-1.5 rounded-full ${active ? "bg-white" : "bg-gray-400"}`} />
+                                    </button>
+                                  );
+                                })
+                              )}
+                            </div>
+                            {vestEditData.image && (
+                              <div className="relative w-24 h-24 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={vestEditData.image} alt="" className="w-full h-full object-cover"
+                                  style={{ objectPosition: vestEditData.heroObjectPosition || "50% 50%" }} />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Galerija — dodaj slike */}
+                  <div className="bg-white rounded-xl border border-gray-100 p-5 space-y-3">
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Dodaj slike u galeriju <span className="normal-case font-normal text-gray-400">(Dugme DODAJ U GALERIJU radi nezavisno od dugmeta SAČUVAJ IZMENE, jednom klikneš na DODAJ U GALERIJU i slike će biti sačuvane)</span></p>
+                    <p className="text-xs text-gray-500">JPG / PNG, max 5 MB po slici.</p>
+                    <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+                      <input ref={vestGalleryRef} type="file" accept=".jpg,.jpeg,.png" multiple className={fileCls} />
+                      <button type="button" onClick={handleVestGalleryUpload} disabled={vestGallerySaving}
+                        className="px-5 py-2 bg-[#0056b3] text-white text-sm font-semibold rounded-lg hover:bg-[#003d80] transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap">
+                        {vestGallerySaving ? "Upload..." : "Dodaj u galeriju"}
+                      </button>
+                      <button type="button" onClick={handleVestDeleteImages} disabled={vestDeleteSelected.size === 0 || vestDeleting}
+                        className="px-5 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap">
+                        {vestDeleting ? "Brisanje..." : `Obriši izabrano${vestDeleteSelected.size > 0 ? ` (${vestDeleteSelected.size})` : ""}`}
+                      </button>
+                    </div>
+                    {vestGalleryStatus && (
+                      <p className={`text-sm font-medium ${vestGalleryStatus.ok ? "text-green-600" : "text-red-500"}`}>{vestGalleryStatus.msg}</p>
+                    )}
+                    {vestDeleteStatus && (
+                      <p className={`text-sm font-medium ${vestDeleteStatus.ok ? "text-green-600" : "text-red-500"}`}>{vestDeleteStatus.msg}</p>
+                    )}
+                    {vestImagesLoading ? (
+                      <p className="text-xs text-gray-400">Učitavanje slika...</p>
+                    ) : vestImages.length > 0 ? (
+                      <div>
+                        <p className="text-xs font-semibold text-gray-500 mb-1">Trenutne slike ({vestImages.length}) — <span className="font-normal text-gray-400">klikni na sliku da je postaviš kao glavnu, pa pritisni SAČUVAJ IZMENE</span></p>
+                        <div className="grid grid-cols-5 sm:grid-cols-7 md:grid-cols-9 gap-1.5">
+                          {vestImages.map((src) => {
+                            const isMain = vestEditData?.image ? vestEditData.image === src : src === vestImages[0];
+                            const isSelected = vestDeleteSelected.has(src);
+                            return (
+                              <button key={src} type="button"
+                                onClick={() => setVestEditData((p) => p ? { ...p, image: src } : p)}
+                                className={`relative aspect-square rounded-lg overflow-hidden border-2 bg-gray-50 transition-colors ${isMain ? "border-[#0056b3]" : "border-gray-200 hover:border-gray-400"}`}
+                                title={isMain ? "Glavna slika" : "Postavi kao glavnu"}>
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={src} alt="" className="w-full h-full object-cover" />
+                                {isMain && (
+                                  <span className="absolute bottom-0 left-0 right-0 text-center text-[10px] font-bold text-white bg-[#0056b3] py-0.5">Glavna</span>
+                                )}
+                                <span
+                                  role="checkbox"
+                                  aria-checked={isSelected}
+                                  aria-label={isMain ? "Glavna slika ne može biti obrisana" : "Označi za brisanje"}
+                                  onClick={(e) => {
+                                    if (isMain) return;
+                                    e.stopPropagation();
+                                    setVestDeleteSelected((prev) => {
+                                      const next = new Set(prev);
+                                      if (next.has(src)) { next.delete(src); } else { next.add(src); }
+                                      return next;
+                                    });
+                                    setVestDeleteStatus(null);
+                                  }}
+                                  className={`absolute top-1 right-1 w-4 h-4 rounded-sm border flex items-center justify-center transition-colors
+                                    ${isMain ? "border-gray-300 bg-white/60 cursor-not-allowed opacity-40" :
+                                      isSelected ? "bg-red-600 border-red-600 cursor-pointer" :
+                                      "bg-white/80 border-gray-400 cursor-pointer hover:border-red-400"}`}
+                                >
+                                  {isSelected && (
+                                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+                                      <path d="M2 5l2.5 2.5L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+                                  )}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-400">Nema slika za ovu vest.</p>
+                    )}
+                  </div>
+
+                  <div className="bg-white rounded-xl border border-gray-100 p-5 space-y-3">
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Tagovi</p>
+                    <div className="flex flex-wrap gap-2">
+                      {EXISTING_TAGS.map((tag) => (
+                        <button key={tag} type="button"
+                          onClick={() => setVestEditData((p) => p && ({ ...p, tags: p.tags.includes(tag) ? p.tags.filter((t) => t !== tag) : [...p.tags, tag] }))}
+                          className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${vestEditData.tags.includes(tag) ? "bg-[#0056b3] text-white border-[#0056b3]" : "bg-white text-gray-600 border-gray-200 hover:border-[#0056b3]"}`}>
+                          {tag}
+                        </button>
+                      ))}
+                      {vestEditData.tags.filter((t) => !EXISTING_TAGS.includes(t)).map((tag) => (
+                        <span key={tag} className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-full bg-[#0056b3] text-white border border-[#0056b3]">
+                          {tag}
+                          <button type="button" onClick={() => setVestEditData((p) => p && ({ ...p, tags: p.tags.filter((t) => t !== tag) }))} className="hover:opacity-70 ml-0.5" aria-label={`Ukloni tag ${tag}`}>✕</button>
+                        </span>
+                      ))}
+                    </div>
+                    <div className="flex gap-2 pt-1 max-w-xs">
+                      <input type="text" value={vestEditNewTag} onChange={(e) => setVestEditNewTag(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); const t = vestEditNewTag.trim().toLowerCase(); if (t && !vestEditData.tags.includes(t)) setVestEditData((p) => p && ({ ...p, tags: [...p.tags, t] })); setVestEditNewTag(""); } }}
+                        placeholder="Novi tag..." className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 bg-white focus:outline-none focus:ring-2 focus:ring-[#0056b3] focus:border-transparent transition" />
+                      <button type="button" onClick={() => { const t = vestEditNewTag.trim().toLowerCase(); if (t && !vestEditData.tags.includes(t)) setVestEditData((p) => p && ({ ...p, tags: [...p.tags, t] })); setVestEditNewTag(""); }}
+                        className="px-4 py-2 bg-[#e8f0fb] text-[#0056b3] text-sm font-semibold rounded-lg hover:bg-[#0056b3] hover:text-white transition-colors">Dodaj</button>
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-xl border border-gray-100 px-5 py-4 flex items-center gap-3">
+                    {vestEditStatus && (
+                      <div className={`flex items-center gap-2 flex-1 px-4 py-2.5 rounded-lg text-sm font-medium ${vestEditStatus.ok ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
+                        {vestEditStatus.ok ? (
+                          <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
+                        ) : (
+                          <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        )}
+                        {vestEditStatus.msg}
+                      </div>
+                    )}
+                    {!vestEditStatus && <div className="flex-1" />}
+                    <button onClick={() => { setView("list"); setVestEditData(null); setVestEditStatus(null); }}
+                      className="px-5 py-2.5 border border-gray-200 text-sm font-semibold text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">Otkaži</button>
+                    <button onClick={handleVestEditSave}
+                      disabled={vestEditSaving || vestEditData.title.trim().length < 3 || !!vestEditTitleError || vestEditData.text.trim().length < 20 || !vestEditData.date}
+                      className="px-6 py-2.5 bg-[#0056b3] text-white text-sm font-bold rounded-lg hover:bg-[#003d80] transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-sm">
+                      {vestEditSaving ? "Čuvanje..." : "Sačuvaj izmene"}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* ---- EDIT JUNIORI ---- */}
+          {view === "edit" && activeSection === "juniori" && (
+            <div className="flex flex-col gap-4">
+              {juniorEditLoading && (
+                <div className="flex items-center gap-2 text-sm text-gray-400 py-4">
+                  <svg className="animate-spin" width="16" height="16" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+                  </svg>
+                  Učitavanje sadržaja...
+                </div>
+              )}
+              {!juniorEditLoading && juniorEditData && (
+                <>
+                  <div className="flex flex-col xl:flex-row gap-4 xl:items-start">
+                    <div className="flex-1 min-w-0 bg-white rounded-xl border border-gray-100 p-6 space-y-5">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Naslov <span className="text-red-400">*</span></label>
+                        <input type="text" value={juniorEditData.title} maxLength={100}
+                          className={inputCls + (juniorEditTitleError ? " !border-red-400 !ring-red-300" : "")}
+                          onChange={(e) => { setJuniorEditData((p) => p && ({ ...p, title: e.target.value })); setJuniorEditTitleError(validateTitle(e.target.value)); }} />
+                        <div className="flex justify-between mt-1">
+                          {juniorEditTitleError ? <p className="text-xs text-red-500">{juniorEditTitleError}</p> : <span />}
+                          <p className={`text-xs ml-auto ${juniorEditData.title.length > 90 ? "text-amber-500" : "text-gray-400"}`}>{juniorEditData.title.length}/100</p>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Tekst <span className="text-red-400">*</span></label>
+                        <textarea rows={18} value={juniorEditData.text}
+                          className={textareaCls + (juniorEditTextError ? " !border-red-400 !ring-red-300" : "")}
+                          onChange={(e) => { setJuniorEditData((p) => p && ({ ...p, text: e.target.value })); if (e.target.value.trim().length >= 20) setJuniorEditTextError(null); }}
+                          onBlur={(e) => { if (e.target.value.trim().length > 0 && e.target.value.trim().length < 20) setJuniorEditTextError("Tekst mora imati najmanje 20 karaktera."); }} />
+                        {juniorEditTextError && <p className="mt-1 text-xs text-red-500">{juniorEditTextError}</p>}
+                      </div>
+                    </div>
+                    <div className="w-full xl:w-72 2xl:w-80 flex-shrink-0 space-y-4">
+                      <div className="bg-white rounded-xl border border-gray-100 p-5 space-y-4">
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Detalji</p>
+                        <label className="flex items-center gap-3 cursor-pointer select-none group">
+                          <input type="checkbox" checked={juniorEditData.arhivirano}
+                            onChange={(e) => setJuniorEditData((p) => p && ({ ...p, arhivirano: e.target.checked }))}
+                            className="w-4 h-4 rounded border-gray-300 text-[#0056b3] accent-[#0056b3] cursor-pointer" />
+                          <span className="text-sm font-semibold text-gray-700">Arhivirano</span>
+                          {juniorEditData.arhivirano && <span className="text-xs text-amber-600 font-medium">— neće biti vidljivo</span>}
+                        </label>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1.5">Autor</label>
+                          <input type="text" value={juniorEditData.author}
+                            onChange={(e) => setJuniorEditData((p) => p && ({ ...p, author: e.target.value }))}
+                            className={inputCls} placeholder="Diaverzum Novi Sad" />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1.5">Datum objave <span className="text-red-400">*</span></label>
+                          <input type="date" value={juniorEditData.date}
+                            onChange={(e) => setJuniorEditData((p) => p && ({ ...p, date: e.target.value }))}
+                            className={inputCls} />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1.5">Layout glavne slike <span className="text-red-400">*</span></label>
+                          <select value={juniorEditData.heroLayout}
+                            onChange={(e) => setJuniorEditData((p) => p && ({ ...p, heroLayout: e.target.value }))}
+                            className={inputCls}>
+                            <option value="top">Landscape — slika gore, tekst ispod</option>
+                            <option value="float">Portret — slika levo, tekst teče oko nje</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-1.5">Fokus glavne slike</label>
+                          <div className="flex gap-4 items-start">
+                            <div className="grid grid-cols-5 gap-0.5 flex-shrink-0">
+                              {Array.from({ length: 5 }, (_, row) =>
+                                Array.from({ length: 5 }, (_, col) => {
+                                  const pos = `${col * 25}% ${row * 25}%`;
+                                  const current = juniorEditData.heroObjectPosition || "50% 50%";
+                                  const active = current === pos;
+                                  return (
+                                    <button key={pos} type="button" title={pos}
+                                      onClick={() => setJuniorEditData((p) => p && ({ ...p, heroObjectPosition: pos }))}
+                                      className={`w-6 h-6 rounded-sm transition-colors flex items-center justify-center ${active ? "bg-[#0056b3]" : "bg-gray-100 hover:bg-gray-300"}`}>
+                                      <span className={`w-1.5 h-1.5 rounded-full ${active ? "bg-white" : "bg-gray-400"}`} />
+                                    </button>
+                                  );
+                                })
+                              )}
+                            </div>
+                            {juniorEditData.image && (
+                              <div className="relative w-24 h-24 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={juniorEditData.image} alt="" className="w-full h-full object-cover"
+                                  style={{ objectPosition: juniorEditData.heroObjectPosition || "50% 50%" }} />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Galerija — dodaj slike */}
+                  <div className="bg-white rounded-xl border border-gray-100 p-5 space-y-3">
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Dodaj slike u galeriju <span className="normal-case font-normal text-gray-400">(Dugme DODAJ U GALERIJU radi nezavisno od dugmeta SAČUVAJ IZMENE, jednom klikneš na DODAJ U GALERIJU i slike će biti sačuvane)</span></p>
+                    <p className="text-xs text-gray-500">JPG / PNG, max 5 MB po slici.</p>
+                    <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+                      <input ref={juniorGalleryRef} type="file" accept=".jpg,.jpeg,.png" multiple className={fileCls} />
+                      <button type="button" onClick={handleJuniorGalleryUpload} disabled={juniorGallerySaving}
+                        className="px-5 py-2 bg-[#0056b3] text-white text-sm font-semibold rounded-lg hover:bg-[#003d80] transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap">
+                        {juniorGallerySaving ? "Upload..." : "Dodaj u galeriju"}
+                      </button>
+                      <button type="button" onClick={handleJuniorDeleteImages} disabled={juniorDeleteSelected.size === 0 || juniorDeleting}
+                        className="px-5 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap">
+                        {juniorDeleting ? "Brisanje..." : `Obriši izabrano${juniorDeleteSelected.size > 0 ? ` (${juniorDeleteSelected.size})` : ""}`}
+                      </button>
+                    </div>
+                    {juniorGalleryStatus && (
+                      <p className={`text-sm font-medium ${juniorGalleryStatus.ok ? "text-green-600" : "text-red-500"}`}>{juniorGalleryStatus.msg}</p>
+                    )}
+                    {juniorDeleteStatus && (
+                      <p className={`text-sm font-medium ${juniorDeleteStatus.ok ? "text-green-600" : "text-red-500"}`}>{juniorDeleteStatus.msg}</p>
+                    )}
+                    {juniorImagesLoading ? (
+                      <p className="text-xs text-gray-400">Učitavanje slika...</p>
+                    ) : juniorImages.length > 0 ? (
+                      <div>
+                        <p className="text-xs font-semibold text-gray-500 mb-1">Trenutne slike ({juniorImages.length}) — <span className="font-normal text-gray-400">klikni na sliku da je postaviš kao glavnu, pa pritisni SAČUVAJ IZMENE</span></p>
+                        <div className="grid grid-cols-5 sm:grid-cols-7 md:grid-cols-9 gap-1.5">
+                          {juniorImages.map((src) => {
+                            const isMain = juniorEditData?.image ? juniorEditData.image === src : src === juniorImages[0];
+                            const isSelected = juniorDeleteSelected.has(src);
+                            return (
+                              <button key={src} type="button"
+                                onClick={() => setJuniorEditData((p) => p ? { ...p, image: src } : p)}
+                                className={`relative aspect-square rounded-lg overflow-hidden border-2 bg-gray-50 transition-colors ${isMain ? "border-[#0056b3]" : "border-gray-200 hover:border-gray-400"}`}
+                                title={isMain ? "Glavna slika" : "Postavi kao glavnu"}>
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={src} alt="" className="w-full h-full object-cover" />
+                                {isMain && (
+                                  <span className="absolute bottom-0 left-0 right-0 text-center text-[10px] font-bold text-white bg-[#0056b3] py-0.5">Glavna</span>
+                                )}
+                                <span
+                                  role="checkbox"
+                                  aria-checked={isSelected}
+                                  aria-label={isMain ? "Glavna slika ne može biti obrisana" : "Označi za brisanje"}
+                                  onClick={(e) => {
+                                    if (isMain) return;
+                                    e.stopPropagation();
+                                    setJuniorDeleteSelected((prev) => {
+                                      const next = new Set(prev);
+                                      if (next.has(src)) { next.delete(src); } else { next.add(src); }
+                                      return next;
+                                    });
+                                    setJuniorDeleteStatus(null);
+                                  }}
+                                  className={`absolute top-1 right-1 w-4 h-4 rounded-sm border flex items-center justify-center transition-colors
+                                    ${isMain ? "border-gray-300 bg-white/60 cursor-not-allowed opacity-40" :
+                                      isSelected ? "bg-red-600 border-red-600 cursor-pointer" :
+                                      "bg-white/80 border-gray-400 cursor-pointer hover:border-red-400"}`}
+                                >
+                                  {isSelected && (
+                                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+                                      <path d="M2 5l2.5 2.5L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+                                  )}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-400">Nema slika za ovu objavu.</p>
+                    )}
+                  </div>
+
+                  <div className="bg-white rounded-xl border border-gray-100 p-5 space-y-3">
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Tagovi</p>
+                    <div className="flex flex-wrap gap-2">
+                      {EXISTING_TAGS.map((tag) => (
+                        <button key={tag} type="button"
+                          onClick={() => setJuniorEditData((p) => p && ({ ...p, tags: p.tags.includes(tag) ? p.tags.filter((t) => t !== tag) : [...p.tags, tag] }))}
+                          className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${juniorEditData.tags.includes(tag) ? "bg-[#0056b3] text-white border-[#0056b3]" : "bg-white text-gray-600 border-gray-200 hover:border-[#0056b3]"}`}>
+                          {tag}
+                        </button>
+                      ))}
+                      {juniorEditData.tags.filter((t) => !EXISTING_TAGS.includes(t)).map((tag) => (
+                        <span key={tag} className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-full bg-[#0056b3] text-white border border-[#0056b3]">
+                          {tag}
+                          <button type="button" onClick={() => setJuniorEditData((p) => p && ({ ...p, tags: p.tags.filter((t) => t !== tag) }))} className="hover:opacity-70 ml-0.5" aria-label={`Ukloni tag ${tag}`}>✕</button>
+                        </span>
+                      ))}
+                    </div>
+                    <div className="flex gap-2 pt-1 max-w-xs">
+                      <input type="text" value={juniorEditNewTag} onChange={(e) => setJuniorEditNewTag(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); const t = juniorEditNewTag.trim().toLowerCase(); if (t && !juniorEditData.tags.includes(t)) setJuniorEditData((p) => p && ({ ...p, tags: [...p.tags, t] })); setJuniorEditNewTag(""); } }}
+                        placeholder="Novi tag..." className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 bg-white focus:outline-none focus:ring-2 focus:ring-[#0056b3] focus:border-transparent transition" />
+                      <button type="button" onClick={() => { const t = juniorEditNewTag.trim().toLowerCase(); if (t && !juniorEditData.tags.includes(t)) setJuniorEditData((p) => p && ({ ...p, tags: [...p.tags, t] })); setJuniorEditNewTag(""); }}
+                        className="px-4 py-2 bg-[#e8f0fb] text-[#0056b3] text-sm font-semibold rounded-lg hover:bg-[#0056b3] hover:text-white transition-colors">Dodaj</button>
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-xl border border-gray-100 px-5 py-4 flex items-center gap-3">
+                    {juniorEditStatus && (
+                      <div className={`flex items-center gap-2 flex-1 px-4 py-2.5 rounded-lg text-sm font-medium ${juniorEditStatus.ok ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
+                        {juniorEditStatus.ok ? (
+                          <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
+                        ) : (
+                          <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        )}
+                        {juniorEditStatus.msg}
+                      </div>
+                    )}
+                    {!juniorEditStatus && <div className="flex-1" />}
+                    <button onClick={() => { setView("list"); setJuniorEditData(null); setJuniorEditStatus(null); }}
+                      className="px-5 py-2.5 border border-gray-200 text-sm font-semibold text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">Otkaži</button>
+                    <button onClick={handleJuniorEditSave}
+                      disabled={juniorEditSaving || juniorEditData.title.trim().length < 3 || !!juniorEditTitleError || juniorEditData.text.trim().length < 20 || !juniorEditData.date}
+                      className="px-6 py-2.5 bg-[#0056b3] text-white text-sm font-bold rounded-lg hover:bg-[#003d80] transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-sm">
+                      {juniorEditSaving ? "Čuvanje..." : "Sačuvaj izmene"}
                     </button>
                   </div>
                 </>
@@ -2347,8 +3539,8 @@ export default function AdminPage() {
           {view === "add" && activeSection && (
             <div className="flex flex-col gap-4">
 
-              {/* === BLOG / DOGADJAJI FORMA === */}
-              {(activeSection === "blog" || activeSection === "dogadjaji") && (
+              {/* === BLOG / DOGADJAJI / VESTI / JUNIORI FORMA === */}
+              {(activeSection === "blog" || activeSection === "dogadjaji" || activeSection === "vesti" || activeSection === "juniori") && (
                 <div className="flex flex-col xl:flex-row gap-4 xl:items-start">
 
                   {/* Leva kolona — glavni sadržaj */}
@@ -2525,7 +3717,7 @@ export default function AdminPage() {
               )}
 
               {/* Tagovi — puna širina, ispod dvocolonog layouta */}
-              {(activeSection === "blog" || activeSection === "dogadjaji") && (
+              {(activeSection === "blog" || activeSection === "dogadjaji" || activeSection === "vesti" || activeSection === "juniori") && (
                 <div className="bg-white rounded-xl border border-gray-100 p-5 space-y-3">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Tagovi</p>
                   <div className="flex flex-wrap gap-2">
@@ -2660,7 +3852,7 @@ export default function AdminPage() {
                 </button>
                 <button
                   onClick={handleUpload}
-                  disabled={loading || ((activeSection === "blog" || activeSection === "dogadjaji") && !contentCanSave) || (activeSection === "clanovi" && !clanCanSave)}
+                  disabled={loading || ((activeSection === "blog" || activeSection === "dogadjaji" || activeSection === "vesti" || activeSection === "juniori") && !contentCanSave) || (activeSection === "clanovi" && !clanCanSave)}
                   className="px-6 py-2.5 bg-[#0056b3] text-white text-sm font-bold rounded-lg hover:bg-[#003d80] transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
                 >
                   {loading ? "Čuvanje..." : "Sačuvaj"}
@@ -2685,7 +3877,7 @@ export default function AdminPage() {
         >
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
             <div className="flex items-start gap-3">
-              {modal.type === "obrisi" ? (
+              {(modal.type === "obrisi" || modal.type === "obrisi-sliku") ? (
                 <div className="w-10 h-10 rounded-xl bg-red-50 text-red-500 flex items-center justify-center flex-shrink-0">
                   <IcoTrash />
                 </div>
@@ -2703,33 +3895,44 @@ export default function AdminPage() {
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                {(() => {
-                  const isClan = modal.kind === "clan";
-                  const isDog  = modal.kind === "dogadjaj";
-                  const label  = isClan ? modal.item.name : modal.item.title;
-                  const noun   = isClan ? "Član" : isDog ? "Događaj" : "Blog";
-                  const objType = isClan ? "člana" : isDog ? "događaj" : "blog post";
-                  return (
-                    <>
-                      <p id="modal-title" className="text-sm font-bold text-gray-900">
-                        {modal.type === "obrisi"   && `Obriši ${objType}`}
-                        {modal.type === "arhiviraj" && `Arhiviraj ${objType}`}
-                        {modal.type === "vrati"     && `Vrati ${objType}`}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1 leading-relaxed">
-                        {modal.type === "obrisi" && (
-                          <>{isClan ? "Član" : "Sadržaj"} se bezpovratno briše{isClan ? "." : " sa sajta i projekta."} Da li ste sigurni da želite da obrišete <span className="font-semibold text-gray-800">{label}</span>?</>
-                        )}
-                        {modal.type === "arhiviraj" && (
-                          <>{noun} <span className="font-semibold text-gray-800">{label}</span> biće sakriven sa sajta. {isClan ? "Podaci ostaju i mogu se vratiti." : "Sadržaj ostaje na projektu i može se vratiti."}</>
-                        )}
-                        {modal.type === "vrati" && (
-                          <>{noun} <span className="font-semibold text-gray-800">{label}</span> biće ponovo vidljiv na sajtu.</>
-                        )}
-                      </p>
-                    </>
-                  );
-                })()}
+                {modal.type === "obrisi-sliku" ? (
+                  <>
+                    <p id="modal-title" className="text-sm font-bold text-gray-900">Obriši fotografiju člana</p>
+                    <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                      Fotografija člana <span className="font-semibold text-gray-800">{modal.item.name}</span> biće trajno obrisana. Član će biti prikazan sa podrazumevanom fotografijom.
+                    </p>
+                  </>
+                ) : (
+                  (() => {
+                    const isClan   = modal.kind === "clan";
+                    const isDog    = modal.kind === "dogadjaj";
+                    const isVest   = modal.kind === "vest";
+                    const isJunior = modal.kind === "junior";
+                    const label    = isClan ? modal.item.name : modal.item.title;
+                    const noun     = isClan ? "Član" : isDog ? "Događaj" : isVest ? "Vest" : isJunior ? "Objava" : "Blog";
+                    const objType  = isClan ? "člana" : isDog ? "događaj" : isVest ? "vest" : isJunior ? "objavu" : "blog post";
+                    return (
+                      <>
+                        <p id="modal-title" className="text-sm font-bold text-gray-900">
+                          {modal.type === "obrisi"   && `Obriši ${objType}`}
+                          {modal.type === "arhiviraj" && `Arhiviraj ${objType}`}
+                          {modal.type === "vrati"     && `Vrati ${objType}`}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                          {modal.type === "obrisi" && (
+                            <>{isClan ? "Član" : "Sadržaj"} se bezpovratno briše{isClan ? "." : " sa sajta i projekta."} Da li ste sigurni da želite da obrišete <span className="font-semibold text-gray-800">{label}</span>?</>
+                          )}
+                          {modal.type === "arhiviraj" && (
+                            <>{noun} <span className="font-semibold text-gray-800">{label}</span> biće sakriven sa sajta. {isClan ? "Podaci ostaju i mogu se vratiti." : "Sadržaj ostaje na projektu i može se vratiti."}</>
+                          )}
+                          {modal.type === "vrati" && (
+                            <>{noun} <span className="font-semibold text-gray-800">{label}</span> biće ponovo vidljiv na sajtu.</>
+                          )}
+                        </p>
+                      </>
+                    );
+                  })()
+                )}
               </div>
             </div>
             <div className="flex gap-2 justify-end pt-1">
@@ -2744,14 +3947,14 @@ export default function AdminPage() {
                 onClick={handleModalConfirm}
                 disabled={modalLoading}
                 className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-white ${
-                  modal.type === "obrisi"
+                  (modal.type === "obrisi" || modal.type === "obrisi-sliku")
                     ? "bg-red-500 hover:bg-red-600"
                     : modal.type === "arhiviraj"
                     ? "bg-amber-500 hover:bg-amber-600"
                     : "bg-green-600 hover:bg-green-700"
                 }`}
               >
-                {modalLoading ? "..." : modal.type === "obrisi" ? "Obriši" : modal.type === "arhiviraj" ? "Arhiviraj" : "Vrati"}
+                {modalLoading ? "..." : (modal.type === "obrisi" || modal.type === "obrisi-sliku") ? "Obriši" : modal.type === "arhiviraj" ? "Arhiviraj" : "Vrati"}
               </button>
             </div>
           </div>
