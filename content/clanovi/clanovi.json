@@ -21,7 +21,8 @@
     "role": "",
     "image": "/content/clanovi/Aleksa Atanacković 3.jpg",
     "bio": "Zovem se Aleksa Atanacković, inženjer sam informacionih tehnologija koji već 8 godina živi sa dijabetesom. Kao mladi lider u oblasti dijabetesa, prošle godine sam predstavljao Srbiju na Evropskom kampu lidera u Parmi u organizaciji IDF Europe. Posvećen sam širenju svesti o dijabetesu kroz predavanja, edukacije i sadržaj na društvenim mrežama, gde nastojim da približim svakodnevni život osoba koje žive sa dijabetesom. U slobodno vreme bavim se sportom, posebno fudbalom, odbojkom, skvošom, padelom i stonim tenisom, kao i redovnim treninzima u teretani.",
-    "arhivirano": false
+    "arhivirano": false,
+    "heroObjectPosition": "50% 25%"
   },
   {
     "id": 4,
@@ -77,7 +78,8 @@
     "role": "",
     "image": "/content/clanovi/Milica Pušara 10.jpg",
     "bio": "",
-    "arhivirano": false
+    "arhivirano": true,
+    "heroObjectPosition": "50% 50%"
   },
   {
     "id": 11,
@@ -102,13 +104,5 @@
     "image": "/content/clanovi/Ana Stojanović 13.jpg",
     "bio": "Imam 31 godinu, dolazim iz Vranja i završila sam Beogradsku akademiju poslovnih i umetničkih studija. Dijabetes me je naučio disciplini, strpljenju i borbi, ali me nikada nije sprečio da uživam u životu, upoznajem nove ljude i radim ono što volim. U slobodno vreme najviše volim da sviram klavir jer mi smiruje živce, kao i vožnju rolera, klizanje i maženje sa mojim psom Rajom, dok mi druženje sa prijateljima najviše puni baterije — a najlepše mi je kada odem kod mojih na jug i vratim se u dane detinjstva, kada je sve delovalo bezbrižno.",
     "arhivirano": false
-  },
-  {
-    "id": 14,
-    "name": "Petar Petrovic",
-    "role": "",
-    "image": "/content/clanovi/Petar Petrovic 14.jpeg",
-    "bio": "Jedan mali pauk",
-    "arhivirano": true
   }
 ]

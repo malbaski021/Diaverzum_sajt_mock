@@ -13,7 +13,7 @@ export default function ArticleCard({ article, section }: Props) {
   const href = `/${section}/${article.slug}`;
 
   return (
-    <article className="card overflow-hidden group">
+    <article className="card overflow-hidden group flex flex-col">
       {/* Image */}
       <Link href={href} tabIndex={-1} aria-hidden="true">
         <div className="relative h-48 bg-brand-blue-light overflow-hidden">
@@ -35,7 +35,7 @@ export default function ArticleCard({ article, section }: Props) {
         </div>
       </Link>
 
-      <div className="p-5">
+      <div className="p-5 flex flex-col flex-1">
         {/* Tags */}
         {article.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-3">
@@ -56,7 +56,7 @@ export default function ArticleCard({ article, section }: Props) {
 
         <p className="text-gray-500 text-sm line-clamp-2 mb-4">{article.excerpt}</p>
 
-        <div className="flex items-center justify-between text-xs text-gray-400">
+        <div className="flex items-center justify-between text-xs text-gray-400 mt-auto">
           <span>{article.author}</span>
           <time dateTime={article.date}>
             {format(new Date(article.date), "d. MMM yyyy.", { locale: srLatn })}

@@ -82,6 +82,7 @@ interface ClanMember {
   image: string;
   bio: string;
   arhivirano?: boolean;
+  heroObjectPosition?: string;
 }
 
 function localReadJson(relPath: string): ClanMember[] {
@@ -223,7 +224,7 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const contentType = req.headers.get("content-type") ?? "";
-    let id: number, name: string, bio: string, arhivirano: boolean, image: File | null = null;
+    let id: number, name: string, bio: string, arhivirano: boolean, heroObjectPosition: string, image: File | null = null;
 
     if (contentType.includes("multipart/form-data")) {
       const fd = await req.formData();
@@ -231,13 +232,15 @@ export async function PUT(req: NextRequest) {
       name = ((fd.get("name") as string) ?? "").trim();
       bio = ((fd.get("bio") as string) ?? "").trim();
       arhivirano = (fd.get("arhivirano") as string) === "true";
+      heroObjectPosition = ((fd.get("heroObjectPosition") as string) ?? "50% 50%").trim();
       image = fd.get("image") as File | null;
     } else {
-      const body = await req.json() as { id: number; name: string; bio: string; arhivirano: boolean };
+      const body = await req.json() as { id: number; name: string; bio: string; arhivirano: boolean; heroObjectPosition?: string };
       id = body.id;
       name = (body.name ?? "").trim();
       bio = (body.bio ?? "").trim();
       arhivirano = body.arhivirano;
+      heroObjectPosition = body.heroObjectPosition ?? "50% 50%";
     }
 
     if (!id) return NextResponse.json({ error: "ID je obavezan." }, { status: 400 });
@@ -269,7 +272,7 @@ export async function PUT(req: NextRequest) {
         }
       }
 
-      members[idx] = { ...members[idx], name, bio, arhivirano, image: imagePath };
+      members[idx] = { ...members[idx], name, bio, arhivirano, image: imagePath, heroObjectPosition };
       localWriteJson(jsonRelPath, members);
       return NextResponse.json({ success: true });
     }
@@ -307,7 +310,7 @@ export async function PUT(req: NextRequest) {
       }
     }
 
-    members[idx] = { ...members[idx], name, bio, arhivirano, image: imagePath };
+    members[idx] = { ...members[idx], name, bio, arhivirano, image: imagePath, heroObjectPosition };
     const updatedBase64 = Buffer.from(JSON.stringify(members, null, 2)).toString("base64");
     await putFile(jsonRelPath, updatedBase64, `Admin: izmeni člana ${name} (ID: ${id})`, jsonFile.sha);
 
@@ -322,8 +325,8 @@ export async function PUT(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
-    const body = await req.json() as { id: number };
-    const { id } = body;
+    const body = await req.json() as { id: number; imageOnly?: boolean };
+    const { id, imageOnly } = body;
 
     if (!id) return NextResponse.json({ error: "ID je obavezan." }, { status: 400 });
 
@@ -334,11 +337,17 @@ export async function DELETE(req: NextRequest) {
       const member = members.find((m) => m.id === id);
       if (!member) return NextResponse.json({ error: "Član nije pronađen." }, { status: 404 });
 
-      // Obriši sliku
       if (member.image) {
         const imgFilename = path.basename(member.image);
         localDeleteFile(`content/clanovi/${imgFilename}`);
         localDeleteFile(`public/content/clanovi/${imgFilename}`);
+      }
+
+      if (imageOnly) {
+        const idx = members.findIndex((m) => m.id === id);
+        members[idx] = { ...members[idx], image: "" };
+        localWriteJson(jsonRelPath, members);
+        return NextResponse.json({ success: true });
       }
 
       const updated = members.filter((m) => m.id !== id);
@@ -355,7 +364,6 @@ export async function DELETE(req: NextRequest) {
     const member = members.find((m) => m.id === id);
     if (!member) return NextResponse.json({ error: "Član nije pronađen." }, { status: 404 });
 
-    // Obriši slike na GitHubu
     if (member.image) {
       const imgFilename = path.basename(member.image);
       const publicPath = `public/content/clanovi/${imgFilename}`;
@@ -366,6 +374,14 @@ export async function DELETE(req: NextRequest) {
 
       const contentSha = await getFileSha(contentPath);
       if (contentSha) await deleteFile(contentPath, `Admin: obriši sliku člana ID ${id}`, contentSha);
+    }
+
+    if (imageOnly) {
+      const idx = members.findIndex((m) => m.id === id);
+      members[idx] = { ...members[idx], image: "" };
+      const updatedBase64 = Buffer.from(JSON.stringify(members, null, 2)).toString("base64");
+      await putFile(jsonRelPath, updatedBase64, `Admin: obriši sliku člana ID ${id}`, jsonFile.sha);
+      return NextResponse.json({ success: true });
     }
 
     const updated = members.filter((m) => m.id !== id);
