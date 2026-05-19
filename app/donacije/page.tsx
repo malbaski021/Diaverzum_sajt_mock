@@ -18,13 +18,15 @@ const ways = [
     title: "Uplata na račun",
     content: (
       <div className="space-y-2 text-sm text-gray-700">
-        <div className="grid gap-x-4 gap-y-1" style={{ gridTemplateColumns: "auto 1fr" }}>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1">
           <span className="text-gray-400">Naziv primaoca</span>
           <span className="font-medium">Diaverzum Novi Sad</span>
           <span className="text-gray-400">Banka</span>
-          <span className="font-medium">Banka Intesa</span>
+          <span className="font-medium">Raiffeisen banka</span>
           <span className="text-gray-400">Broj računa</span>
-          <span className="font-mono font-bold">160-6000001726236-74</span>
+          <span className="font-mono font-medium">265-XXXXXXXXXX-XX</span>
+          <span className="text-gray-400">Poziv na broj</span>
+          <span className="font-medium">DONACIJA</span>
         </div>
       </div>
     ),
@@ -40,8 +42,9 @@ const ways = [
     title: "Lična donacija",
     content: (
       <p className="text-sm text-gray-700 leading-relaxed">
-        Možete nas posetiti lično (uz prethodnu najavu telefonom) u našim prostorijama na adresi{" "}
-        <strong>Bulevar Oslobođenja 33, Novi Sad</strong> i predati donaciju direktno.
+        Možete nas posetiti lično u našim prostorijama na adresi{" "}
+        <strong>Bulevar Oslobođenja 33, Novi Sad</strong> tokom radnog
+        vremena (pon–pet, 09–17h) i predati donaciju direktno.
       </p>
     ),
   },

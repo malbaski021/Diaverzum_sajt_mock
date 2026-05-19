@@ -16,6 +16,7 @@ function getGalleryImages(slug: string): string[] {
     "public",
     "content",
     "juniori",
+    "gallery",
     slug
   );
   if (!fs.existsSync(publicDir)) return [];
@@ -27,14 +28,13 @@ function getGalleryImages(slug: string): string[] {
       const nb = parseInt(b);
       return isNaN(na) || isNaN(nb) ? a.localeCompare(b) : na - nb;
     })
-    .map((f) => `/content/juniori/${slug}/${f}`);
+    .map((f) => `/content/juniori/gallery/${slug}/${f}`);
 }
 
 function resolveCoverImage(
   data: Record<string, unknown>,
   images: string[]
 ): string | null {
-  if (data.image) return data.image as string;
   if (data.coverImage) return data.coverImage as string;
   return images.length > 0 ? images[0] : null;
 }
@@ -48,8 +48,6 @@ function parseFolder(folderPath: string): JunioriPost | null {
   const { data } = matter(raw);
   const images = getGalleryImages(slug);
   const coverImage = resolveCoverImage(data, images);
-
-  if (data.arhivirano === true) return null;
 
   return {
     slug,

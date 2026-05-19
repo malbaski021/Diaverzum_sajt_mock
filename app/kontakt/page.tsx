@@ -16,8 +16,8 @@ const contactInfo = [
       </svg>
     ),
     label: "Telefon",
-    value: "+381 63 570 251",
-    href: "tel:+38163570251",
+    value: "+381 21 XXX XXXX",
+    href: "tel:+38121XXXXXXX",
   },
   {
     icon: (
@@ -41,6 +41,17 @@ const contactInfo = [
     value: "Bulevar Oslobođenja 33, 21000 Novi Sad",
     href: "https://maps.google.com/?q=Novi+Sad",
   },
+  {
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="10" />
+        <polyline points="12 6 12 12 16 14" />
+      </svg>
+    ),
+    label: "Radno vreme",
+    value: "Pon–Pet: 09:00–17:00",
+    href: undefined,
+  },
 ];
 
 export default function KontaktPage() {
@@ -60,12 +71,9 @@ export default function KontaktPage() {
           {/* Left: Info */}
           <div>
             <h1 className="text-gray-900 mb-4">Kontakt</h1>
-            <p className="text-xl text-gray-500 leading-relaxed mb-3">
+            <p className="text-xl text-gray-500 leading-relaxed mb-10">
               Tu smo za vas. Javite nam se telefonom, emailom ili nas posetite
               lično u našim prostorijama u Novom Sadu.
-            </p>
-            <p className="text-sm text-gray-400 mb-10">
-              Za ličnu posetu molimo vas da se unapred najavite telefonskim putem.
             </p>
 
             <div className="space-y-6">

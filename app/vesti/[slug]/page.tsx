@@ -5,7 +5,7 @@ import Img from "@/components/Img";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import { getArticleBySlug, getAllSlugs } from "@/lib/mdx";
 import { format } from "date-fns";
-import { srLatn } from "date-fns/locale";
+import { sr } from "date-fns/locale";
 
 interface Props {
   params: { slug: string };
@@ -47,8 +47,6 @@ export default function VestiSlugPage({ params }: Props) {
           </ol>
         </nav>
 
-        <div className="max-w-3xl mx-auto">
-
         {/* Tags + title + meta */}
         <div className="mb-8">
           {meta.tags.length > 0 && (
@@ -68,25 +66,25 @@ export default function VestiSlugPage({ params }: Props) {
             {meta.author && <span>{meta.author}</span>}
             {meta.author && <span aria-hidden="true">·</span>}
             <time dateTime={meta.date}>
-              {format(new Date(meta.date), "d. MMMM yyyy.", { locale: srLatn })}
+              {format(new Date(meta.date), "d. MMMM yyyy.", { locale: sr })}
             </time>
           </div>
         </div>
 
         {/* Image + text side by side */}
-        {meta.image && !meta.noHero ? (
+        {meta.image ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-            <div className="rounded-xl overflow-hidden">
+            <div className="relative rounded-xl overflow-hidden aspect-[4/3] md:aspect-auto md:min-h-[340px]">
               <Img
                 src={meta.image}
                 alt={meta.title}
-                width={800}
-                height={600}
-                className="w-full h-auto"
+                fill
+                className="object-cover"
                 priority
+                sizes="(max-width: 768px) 100vw, 50vw"
               />
             </div>
-            <div className="flex flex-col justify-start">
+            <div className="flex flex-col justify-center">
               <div className="prose max-w-none">
                 <MDXRemote source={content} />
               </div>
@@ -94,7 +92,7 @@ export default function VestiSlugPage({ params }: Props) {
           </div>
         ) : (
           /* No image — full width content */
-          <div className="w-full">
+          <div className="max-w-3xl">
             <div className="prose max-w-none">
               <MDXRemote source={content} />
             </div>
@@ -114,7 +112,6 @@ export default function VestiSlugPage({ params }: Props) {
           </Link>
         </div>
 
-        </div>
       </div>
     </div>
   );

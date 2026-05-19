@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-const WEB3FORMS_KEY = process.env.NEXT_PUBLIC_WEB3FORMS_KEY ?? "8f0bac80-53f7-4afd-9e85-74b7ae3c4cb7";
+const WEB3FORMS_KEY = process.env.NEXT_PUBLIC_WEB3FORMS_KEY ?? "";
 
 export default function KontaktForma() {
   const [status, setStatus] = useState<"idle" | "loading" | "sent" | "error">("idle");
@@ -85,10 +85,6 @@ export default function KontaktForma() {
                 aria-required="true"
               />
             </div>
-
-            <p className="text-xs text-gray-400 leading-relaxed">
-              Slanjem ovog formulara saglasni ste da Vaše ime i email adresu koristimo isključivo u svrhu odgovora na Vaše pitanje. Podatke ne delimo sa trećim stranama niti ih koristimo u marketinške svrhe. U skladu sa GDPR regulativom, imate pravo na uvid, ispravku i brisanje Vaših podataka.
-            </p>
 
             {status === "error" && (
               <p className="text-red-600 text-sm">Došlo je do greške. Pokušajte ponovo ili nas kontaktirajte direktno.</p>
