@@ -1,42 +1,18 @@
 import fs from "fs";
 import path from "path";
+import matter from "gray-matter";
 
 export interface EventData {
   slug: string;
   title: string;
   date: string;
+  excerpt: string;
   folderName: string;
   content: string;
   images: string[]; // public URLs
-}
-
-// Map folder names to slugs and metadata
-const EVENT_MAP: Record<
-  string,
-  { slug: string; title: string; date: string }
-> = {
-  "12 JAN 2026 - Madjionicar": {
-    slug: "madjionicar-januar-2026",
-    title: "Mađioničar u Diaverzumu",
-    date: "2026-01-12",
-  },
-  "16 Novembar 2025 - Predstava - Banja Luka": {
-    slug: "predstava-banja-luka-2025",
-    title: "Predstava u Banja Luci",
-    date: "2025-11-16",
-  },
-  "26 Nov 2025 - Turnir": {
-    slug: "turnir-novembar-2025",
-    title: "Humanitarni fudbalski turnir",
-    date: "2025-11-26",
-  },
-};
-
-function readTextFile(folderPath: string): string {
-  const files = fs.readdirSync(folderPath);
-  const txtFile = files.find((f) => f.toLowerCase().endsWith(".txt"));
-  if (!txtFile) return "";
-  return fs.readFileSync(path.join(folderPath, txtFile), "utf-8").trim();
+  author: string;
+  heroObjectPosition?: string;
+  heroLayout?: string;
 }
 
 function getImages(slug: string): string[] {
@@ -44,7 +20,7 @@ function getImages(slug: string): string[] {
     process.cwd(),
     "public",
     "content",
-    "events",
+    "dogadjaji",
     slug
   );
   if (!fs.existsSync(publicDir)) return [];
@@ -56,23 +32,54 @@ function getImages(slug: string): string[] {
       const nb = parseInt(b);
       return isNaN(na) || isNaN(nb) ? a.localeCompare(b) : na - nb;
     })
-    .map((f) => `/content/events/${slug}/${f}`);
+    .map((f) => `/content/dogadjaji/${slug}/${f}`);
 }
 
 export function getAllEvents(): EventData[] {
-  const blogDir = path.join(process.cwd(), "content", "dogadjaji");
-  if (!fs.existsSync(blogDir)) return [];
+  const dogadjaji = path.join(process.cwd(), "content", "dogadjaji");
+  if (!fs.existsSync(dogadjaji)) return [];
 
-  return Object.entries(EVENT_MAP)
-    .map(([folderName, meta]) => {
-      const folderPath = path.join(blogDir, folderName);
-      const content = fs.existsSync(folderPath)
-        ? readTextFile(folderPath)
-        : "";
-      const images = getImages(meta.slug);
-      return { ...meta, folderName, content, images };
-    })
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const events: EventData[] = [];
+
+  for (const entry of fs.readdirSync(dogadjaji, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+
+    const folderPath = path.join(dogadjaji, entry.name);
+    const mdxFile = fs
+      .readdirSync(folderPath)
+      .find((f) => f.endsWith(".mdx"));
+
+    if (!mdxFile) continue;
+
+    const raw = fs.readFileSync(path.join(folderPath, mdxFile), "utf-8");
+    const { data, content } = matter(raw);
+    const slug = path.basename(mdxFile, ".mdx");
+
+    if (data.arhivirano === true) continue;
+
+    const rawImages = getImages(slug);
+    const frontmatterImage = (data.image as string | undefined) ?? "";
+    const images = frontmatterImage && rawImages.includes(frontmatterImage)
+      ? [frontmatterImage, ...rawImages.filter((img) => img !== frontmatterImage)]
+      : rawImages;
+
+    events.push({
+      slug,
+      title: data.title ?? "",
+      date: data.date ?? "",
+      excerpt: data.excerpt ?? "",
+      folderName: entry.name,
+      content: content.trim(),
+      images,
+      author: data.author ?? "",
+      heroObjectPosition: data.heroObjectPosition ?? undefined,
+      heroLayout: data.heroLayout ?? undefined,
+    });
+  }
+
+  return events.sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+  );
 }
 
 export function getEventBySlug(slug: string): EventData | null {

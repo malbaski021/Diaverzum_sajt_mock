@@ -4,8 +4,9 @@ import Link from "next/link";
 import Img from "@/components/Img";
 import { getEventBySlug, getAllEventSlugs } from "@/lib/events";
 import { format } from "date-fns";
-import { sr } from "date-fns/locale";
+import { srLatn } from "date-fns/locale";
 import ImageGallery from "@/components/ImageGallery";
+import InstaText from "@/components/InstaText";
 
 interface Props {
   params: { slug: string };
@@ -52,32 +53,39 @@ export default function DogadjajPage({ params }: Props) {
             Događaj
           </span>
           <h1 className="text-gray-900 mb-2">{event.title}</h1>
-          <time dateTime={event.date} className="text-sm text-brand-gray-text">
-            {format(new Date(event.date), "d. MMMM yyyy.", { locale: sr })}
-          </time>
+          <div className="flex items-center gap-4 text-sm text-brand-gray-text">
+            <time dateTime={event.date}>
+              {format(new Date(event.date), "d. MMMM yyyy.", { locale: srLatn })}
+            </time>
+            {event.author && (
+              <>
+                <span aria-hidden="true">·</span>
+                <InstaText text={`Autor: ${event.author}`} />
+              </>
+            )}
+          </div>
         </div>
 
-        {/* Hero: image left + text right */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        {/* Hero: image floats left, text wraps around and expands below */}
+        <div className="mb-8 overflow-hidden">
           {heroImage && (
-            <div className="relative rounded-xl overflow-hidden aspect-[4/3] md:aspect-auto md:min-h-[360px]">
+            <div className="relative rounded-xl overflow-hidden aspect-[4/3] mb-4 md:float-left md:w-1/2 md:mr-8 md:mb-4">
               <Img
                 src={heroImage}
                 alt={`${event.title} — fotografija`}
                 fill
                 className="object-cover"
+                style={{ objectPosition: event.heroObjectPosition ?? "center" }}
                 priority
               />
             </div>
           )}
-          <div className="flex flex-col justify-center">
-            <div className="prose max-w-none">
-              {paragraphs.map((para, i) => (
-                <p key={i} className="text-gray-700 leading-relaxed mb-4 last:mb-0">
-                  {para}
-                </p>
-              ))}
-            </div>
+          <div className="prose max-w-none">
+            {paragraphs.map((para, i) => (
+              <p key={i} className="text-gray-700 leading-relaxed mb-4 last:mb-0">
+                <InstaText text={para} />
+              </p>
+            ))}
           </div>
         </div>
 
