@@ -119,20 +119,6 @@ Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu 
 ===
 
 ---
-id: nov-kategorija
-title: "nov kategorija"
-archived: false
----
-
-nov nesto
-
-<!-- more -->
-
-sasvim drugo
-
-===
-
----
 id: terapija
 title: "Terapija i lekovi"
 archived: false
