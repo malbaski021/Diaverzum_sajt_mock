@@ -27,7 +27,13 @@ function withKeys(sections: DijabetesSection[]): EditableSection[] {
 }
 
 function stripKeys(sections: EditableSection[]): DijabetesSection[] {
-  return sections.map(({ _key, ...rest }) => rest);
+  return sections.map((s) => ({
+    id: s.id,
+    title: s.title,
+    intro: s.intro,
+    content: s.content,
+    archived: s.archived,
+  }));
 }
 
 function sectionsEqual(a: EditableSection[], b: EditableSection[]): boolean {
@@ -307,7 +313,7 @@ export default function ODijabetesuAdmin() {
 
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-                  Pun sadržaj <span className="text-gray-400 normal-case font-normal">(prikazuje se na "Učitaj više"; opciono)</span>
+                  Pun sadržaj <span className="text-gray-400 normal-case font-normal">(prikazuje se na &bdquo;Učitaj više&rdquo;; opciono)</span>
                 </label>
                 <textarea
                   value={s.content}
