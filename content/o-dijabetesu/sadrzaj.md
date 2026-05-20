@@ -1,6 +1,6 @@
 ---
 id: sta-je
-title: "Šta je dijabetes?"
+title: "Šta je dijabetes??"
 archived: false
 ---
 
