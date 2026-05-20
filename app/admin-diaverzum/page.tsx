@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import ODijabetesuAdmin from "@/components/admin/ODijabetesuAdmin";
+import MaterijaliAdmin from "@/components/admin/MaterijaliAdmin";
 
 // --- Konstante ---
 
@@ -23,7 +25,7 @@ const fileCls =
 
 // --- Tipovi ---
 
-type Section = "vesti" | "dogadjaji" | "blog" | "juniori" | "clanovi";
+type Section = "vesti" | "dogadjaji" | "blog" | "juniori" | "clanovi" | "o-dijabetesu";
 type View = "dashboard" | "overview" | "add" | "list" | "delete" | "edit";
 
 interface NavItem {
@@ -40,6 +42,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: "blog",      label: "Blog",      hasBackend: true,  description: "Blog postovi i priče",                    addLabel: "Dodaj blog"      },
   { id: "juniori",   label: "Juniori",   hasBackend: true,  description: "Sadržaj za mlade osobe sa dijabetesom",   addLabel: "Dodaj objavu"    },
   { id: "clanovi",   label: "Članovi",   hasBackend: true,  description: "Upravljaj listom članova",                addLabel: "Dodaj člana"     },
+  { id: "o-dijabetesu", label: "O dijabetesu", hasBackend: true, description: "Uredi kategorije edukativnog sadržaja", addLabel: "Uredi sadržaj"   },
 ];
 
 // --- SVG Ikone ---
@@ -137,14 +140,24 @@ function IcoHamburger() {
   );
 }
 
+function IcoBook() {
+  return (
+    <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z" />
+      <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z" />
+    </svg>
+  );
+}
+
 function getIcon(section: Section | null) {
   switch (section) {
-    case "vesti":     return <IcoNewspaper />;
-    case "dogadjaji": return <IcoCalendar />;
-    case "blog":      return <IcoPen />;
-    case "juniori":   return <IcoStar />;
-    case "clanovi":   return <IcoUsers />;
-    default:          return <IcoDashboard />;
+    case "vesti":         return <IcoNewspaper />;
+    case "dogadjaji":     return <IcoCalendar />;
+    case "blog":          return <IcoPen />;
+    case "juniori":       return <IcoStar />;
+    case "clanovi":       return <IcoUsers />;
+    case "o-dijabetesu":  return <IcoBook />;
+    default:              return <IcoDashboard />;
   }
 }
 
@@ -1454,7 +1467,7 @@ export default function AdminPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            {view === "overview" && activeSection && hasBackend && (
+            {view === "overview" && activeSection && hasBackend && activeSection !== "o-dijabetesu" && (
               <button
                 onClick={() => setView("add")}
                 className="flex items-center gap-2 px-4 py-2 bg-[#0056b3] text-white text-sm font-semibold rounded-lg hover:bg-[#003d80] transition-colors shadow-sm"
@@ -1509,8 +1522,20 @@ export default function AdminPage() {
             </div>
           )}
 
+          {/* ---- O DIJABETESU (custom single-page admin) ---- */}
+          {view === "overview" && activeSection === "o-dijabetesu" && (
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 max-w-7xl">
+              <div className="lg:col-span-3">
+                <ODijabetesuAdmin />
+              </div>
+              <div className="lg:col-span-2">
+                <MaterijaliAdmin />
+              </div>
+            </div>
+          )}
+
           {/* ---- SECTION OVERVIEW ---- */}
-          {view === "overview" && activeSection && (
+          {view === "overview" && activeSection && activeSection !== "o-dijabetesu" && (
             <div className="space-y-4 max-w-3xl">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 
