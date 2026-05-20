@@ -123,9 +123,21 @@ export default function ODijabetesuAdmin() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sections: stripKeys(sections) }),
       });
-      const data = await res.json();
+      const text = await res.text();
+      let data: { sections?: DijabetesSection[]; error?: string } = {};
+      if (text) {
+        try {
+          data = JSON.parse(text);
+        } catch {
+          setStatus({
+            ok: false,
+            msg: `Server vratio ne-JSON odgovor (HTTP ${res.status}): ${text.slice(0, 200)}`,
+          });
+          return;
+        }
+      }
       if (!res.ok) {
-        setStatus({ ok: false, msg: data.error ?? "Čuvanje nije uspelo." });
+        setStatus({ ok: false, msg: data.error ?? `Čuvanje nije uspelo (HTTP ${res.status}).` });
         return;
       }
       const withK = withKeys(data.sections ?? []);

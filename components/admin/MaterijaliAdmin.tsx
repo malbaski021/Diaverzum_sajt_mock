@@ -114,9 +114,18 @@ export default function MaterijaliAdmin() {
         const fd = new FormData();
         fd.append("file", file);
         const res = await fetch("/api/admin/materijali", { method: "POST", body: fd });
-        const data = await res.json();
+        const text = await res.text();
+        let data: { items?: Materijal[]; error?: string } = {};
+        if (text) {
+          try {
+            data = JSON.parse(text);
+          } catch {
+            failed.push(`${file.name}: server vratio ne-JSON (HTTP ${res.status}): ${text.slice(0, 100)}`);
+            continue;
+          }
+        }
         if (!res.ok) {
-          failed.push(`${file.name}: ${data.error ?? "greška"}`);
+          failed.push(`${file.name}: ${data.error ?? `HTTP ${res.status}`}`);
         } else {
           latestItems = data.items ?? latestItems;
         }
@@ -153,6 +162,16 @@ export default function MaterijaliAdmin() {
     }
   };
 
+  const parseJsonResponse = async (res: Response): Promise<{ items?: Materijal[]; error?: string } | { _nonJson: string }> => {
+    const text = await res.text();
+    if (!text) return {};
+    try {
+      return JSON.parse(text);
+    } catch {
+      return { _nonJson: `Server vratio ne-JSON (HTTP ${res.status}): ${text.slice(0, 150)}` };
+    }
+  };
+
   const handleBulkArchive = async (action: "archive" | "unarchive") => {
     if (!selected.size) return;
     const files = Array.from(selected);
@@ -164,9 +183,13 @@ export default function MaterijaliAdmin() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ files, action }),
       });
-      const data = await res.json();
+      const data = await parseJsonResponse(res);
+      if ("_nonJson" in data) {
+        setStatus({ ok: false, msg: data._nonJson });
+        return;
+      }
       if (!res.ok) {
-        setStatus({ ok: false, msg: data.error ?? "Akcija nije uspela." });
+        setStatus({ ok: false, msg: data.error ?? `HTTP ${res.status}` });
       } else {
         setItems(data.items ?? []);
         setSelected(new Set());
@@ -196,9 +219,13 @@ export default function MaterijaliAdmin() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ files }),
       });
-      const data = await res.json();
+      const data = await parseJsonResponse(res);
+      if ("_nonJson" in data) {
+        setStatus({ ok: false, msg: data._nonJson });
+        return;
+      }
       if (!res.ok) {
-        setStatus({ ok: false, msg: data.error ?? "Brisanje nije uspelo." });
+        setStatus({ ok: false, msg: data.error ?? `HTTP ${res.status}` });
       } else {
         setItems(data.items ?? []);
         setSelected(new Set());
