@@ -39,7 +39,10 @@ function enc(p: string): string {
 async function getFileFromGitHub(relPath: string): Promise<{ content: string; sha: string } | null> {
   const res = await fetch(
     `${GITHUB_API}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${enc(relPath)}?ref=${GITHUB_BRANCH}`,
-    { headers: { Authorization: `Bearer ${GITHUB_TOKEN}`, "X-GitHub-Api-Version": "2022-11-28" } }
+    {
+      headers: { Authorization: `Bearer ${GITHUB_TOKEN}`, "X-GitHub-Api-Version": "2022-11-28" },
+      cache: "no-store",
+    }
   );
   if (!res.ok) return null;
   const data = await res.json();
@@ -49,7 +52,10 @@ async function getFileFromGitHub(relPath: string): Promise<{ content: string; sh
 async function listGitHubDir(relPath: string): Promise<{ name: string }[]> {
   const res = await fetch(
     `${GITHUB_API}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${enc(relPath)}?ref=${GITHUB_BRANCH}`,
-    { headers: { Authorization: `Bearer ${GITHUB_TOKEN}`, "X-GitHub-Api-Version": "2022-11-28" } }
+    {
+      headers: { Authorization: `Bearer ${GITHUB_TOKEN}`, "X-GitHub-Api-Version": "2022-11-28" },
+      cache: "no-store",
+    }
   );
   if (!res.ok) return [];
   const data = await res.json();
