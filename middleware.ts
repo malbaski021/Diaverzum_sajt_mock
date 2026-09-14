@@ -14,15 +14,30 @@ function checkAuth(req: NextRequest, user: string, pass: string, realm: string) 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Admin route — zaštićen samo kad su env varijable postavljene
-  if (pathname.startsWith("/admin-diaverzum")) {
+  // Admin UI + admin API rute — obe moraju biti iza basic auth-a.
+  // /api/admin/* ima GitHub write token, pa je bez zaštite jednako opasno
+  // kao otvoren /admin-diaverzum.
+  if (
+    pathname.startsWith("/admin-diaverzum") ||
+    pathname.startsWith("/api/admin")
+  ) {
     const user = process.env.ADMIN_USER;
     const pass = process.env.ADMIN_PASS;
-    if (user && pass && !checkAuth(req, user, pass, "Admin")) {
-      return new NextResponse("Unauthorized", {
-        status: 401,
-        headers: { "WWW-Authenticate": 'Basic realm="Admin"' },
-      });
+    const unauthorized = new NextResponse("Unauthorized", {
+      status: 401,
+      headers: { "WWW-Authenticate": 'Basic realm="Admin"' },
+    });
+
+    // Bez konfigurisanih kredencijala: na produkciji fail-closed (radije
+    // nedostupan admin nego otvoren), lokalno propušta radi razvoja.
+    if (!user || !pass) {
+      return process.env.VERCEL_ENV === "production"
+        ? unauthorized
+        : NextResponse.next();
+    }
+
+    if (!checkAuth(req, user, pass, "Admin")) {
+      return unauthorized;
     }
     return NextResponse.next();
   }
