@@ -1,3 +1,4 @@
+import githubBranch from "@/lib/githubBranch";
 import type { Metadata } from "next";
 import Link from "next/link";
 import MemberImage from "@/components/MemberImage";
@@ -16,7 +17,7 @@ const DEFAULT_IMAGE = "/content/clanovi/default.jpg";
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const GITHUB_OWNER = process.env.GITHUB_OWNER;
 const GITHUB_REPO = process.env.GITHUB_REPO;
-const GITHUB_BRANCH = process.env.GITHUB_BRANCH ?? "develop";
+const GITHUB_BRANCH = githubBranch;
 const GITHUB_API = "https://api.github.com";
 const IS_LOCAL = process.env.NODE_ENV === "development";
 
