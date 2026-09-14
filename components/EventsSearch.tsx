@@ -7,7 +7,7 @@ import Link from "next/link";
 import Img from "@/components/Img";
 import { EventData } from "@/lib/events";
 import { format } from "date-fns";
-import { sr } from "date-fns/locale";
+import { srLatn } from "date-fns/locale";
 
 interface Props {
   events: EventData[];
@@ -75,7 +75,7 @@ export default function EventsSearch({ events }: Props) {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
           {filtered.map((event) => (
-            <Link key={event.slug} href={`/dogadjaji/${event.slug}`} className="card overflow-hidden group">
+            <Link key={event.slug} href={`/dogadjaji/${event.slug}`} className="card overflow-hidden group flex flex-col">
               <div className="relative h-48 bg-brand-blue-light overflow-hidden">
                 {event.images[0] ? (
                   <Img
@@ -83,6 +83,7 @@ export default function EventsSearch({ events }: Props) {
                     alt={event.title}
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    style={{ objectPosition: event.heroObjectPosition ?? "center" }}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
@@ -94,18 +95,18 @@ export default function EventsSearch({ events }: Props) {
                     📸 {event.images.length}
                   </div>
                 )}
-                <div className="absolute top-2 left-2 bg-brand-blue text-white text-xs font-semibold px-2 py-0.5 rounded-full">
-                  Događaj
-                </div>
               </div>
-              <div className="p-5">
-                <time dateTime={event.date} className="text-xs text-brand-gray-text uppercase tracking-wider">
-                  {format(new Date(event.date), "d. MMMM yyyy.", { locale: sr })}
-                </time>
-                <h3 className="font-bold text-gray-900 mt-2 mb-2 group-hover:text-brand-blue transition-colors">
+              <div className="p-5 flex flex-col flex-1">
+                <h3 className="font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-brand-blue transition-colors">
                   {event.title}
                 </h3>
-                <p className="text-gray-500 text-sm line-clamp-2">{event.content.split("\n")[0]}</p>
+                <p className="text-gray-500 text-sm line-clamp-2 mb-4">{event.excerpt}</p>
+                <div className="flex items-center justify-between text-xs text-gray-400 mt-auto">
+                  <span>{event.author}</span>
+                  <time dateTime={event.date}>
+                    {format(new Date(event.date), "d. MMM yyyy.", { locale: srLatn })}
+                  </time>
+                </div>
               </div>
             </Link>
           ))}

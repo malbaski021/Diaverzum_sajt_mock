@@ -3,9 +3,14 @@ export interface ArticleMeta {
   date: string;
   excerpt: string;
   image?: string;
+  noHero?: boolean;
+  heroLayout?: "top" | "float" | "landscape" | "float-4-3" | "float-2-3" | "float-3-4";
+  heroObjectPosition?: string;
+  gallery?: string[];
   author: string;
   tags: string[];
   slug: string;
+  arhivirano?: boolean;
 }
 
 export interface Article extends ArticleMeta {

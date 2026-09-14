@@ -4,7 +4,7 @@ export default function HeroSection() {
   return (
     <section
       aria-labelledby="hero-heading"
-      className="relative bg-gradient-to-br from-brand-blue to-brand-blue-dark text-white overflow-hidden"
+      className="relative bg-gradient-to-br from-[#00adef] to-[#0078c8] text-white overflow-hidden"
     >
       {/* Decorative circles */}
       <div

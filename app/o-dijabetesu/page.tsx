@@ -94,8 +94,9 @@ export default function ODijabetesuPage() {
                   ].map((pdf) => (
                     <li key={pdf.file}>
                       <a
-                        href={`/Diaverzum_sajt_mock/content/materijal/${encodeURIComponent(pdf.file)}`}
-                        download={pdf.file}
+                        href={`/content/materijal/${encodeURIComponent(pdf.file)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="flex items-center gap-2 text-sm text-brand-blue hover:underline px-3 py-1.5 rounded-lg hover:bg-brand-blue-light transition-colors"
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">

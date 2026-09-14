@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import { format } from "date-fns";
-import { sr } from "date-fns/locale";
+import { srLatn } from "date-fns/locale";
 import { getJunioriPostBySlug, getAllJunioriSlugs } from "@/lib/juniori";
 import JunioriVideoPlayer from "@/components/JunioriVideoPlayer";
 import JunioriGallery from "@/components/JunioriGallery";
@@ -84,7 +84,7 @@ export default function JunioriSlugPage({ params }: Props) {
             {post.author && <span>{post.author}</span>}
             {post.author && <span aria-hidden="true">·</span>}
             <time dateTime={post.date}>
-              {format(new Date(post.date), "d. MMMM yyyy.", { locale: sr })}
+              {format(new Date(post.date), "d. MMMM yyyy.", { locale: srLatn })}
             </time>
           </div>
 
