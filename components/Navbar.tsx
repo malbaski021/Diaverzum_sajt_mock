@@ -57,18 +57,6 @@ export default function Navbar() {
               style={{ height: "90px", width: "auto", objectFit: "contain" }}
             />
           </Link>
-          <Link
-            href="/juniori"
-            className="flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue rounded-lg"
-            aria-label="Diaverzum Juniori"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={`${BASE}/diaverzum-logo-juniors.png`}
-              alt="Diaverzum Juniori"
-              style={{ height: "90px", width: "auto", objectFit: "contain" }}
-            />
-          </Link>
         </div>
 
         {/* Desktop nav */}
