@@ -27,8 +27,13 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Staging basic auth
-  if (process.env.BASIC_AUTH_ENABLED !== "true") {
+  // Staging basic auth — nikad na produkciji.
+  // VERCEL_ENV Vercel postavlja automatski: "production" | "preview" | "development".
+  // Javni sajt na diaverzum.rs mora biti otvoren bez obzira na BASIC_AUTH_ENABLED.
+  if (
+    process.env.VERCEL_ENV === "production" ||
+    process.env.BASIC_AUTH_ENABLED !== "true"
+  ) {
     return NextResponse.next();
   }
 
