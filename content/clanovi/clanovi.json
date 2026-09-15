@@ -98,8 +98,9 @@
     "name": "Bojana Jovanović",
     "role": "",
     "image": "/content/clanovi/Bojana Jovanović 12.jpg",
-    "bio": "Po struci sam vaspitačica i radim u predškolskoj ustanovi. U slobodno vreme volim da pevam, čitam, crtam provodim vreme sa prijateljima, idem u teretanu i kreiram sadrzaj za društvene mreže. Dijabetes imam 7 godina, od svoje 17.",
-    "arhivirano": false
+    "bio": "Po struci sam vaspitačica i radim u predškolskoj ustanovi. U slobodno vreme volim da pevam, čitam, crtam provodim vreme sa prijateljima, idem u teretanu i kreiram sadrzaj za društvene mreže. Dijabetes imam 7 godina, od svoje 17 godine.",
+    "arhivirano": false,
+    "heroObjectPosition": "0% 25%"
   },
   {
     "id": 13,
