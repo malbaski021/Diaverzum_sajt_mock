@@ -117,7 +117,7 @@ Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu 
 ---
 id: terapija
 title: "Terapija i lekovi"
-archived: false
+archived: true
 ---
 
 Lečenje dijabetesa zavisi od tipa i stadijuma bolesti. Uključuje: insulinsku terapiju (obavezna za tip 1, često i za tip 2), oralne antidijabetike (metformin, inhibitori SGLT-2, analozi GLP-1 i dr.), kontinuirano praćenje glikemije (glukometri, CGM senzori), kao i redovnu fizičku aktivnost. Redovne provere kod lekara su obavezne.
