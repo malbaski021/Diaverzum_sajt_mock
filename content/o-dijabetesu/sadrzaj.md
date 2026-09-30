@@ -1,6 +1,6 @@
 ---
 id: sta-je
-title: "Šta je dijabetes??"
+title: "Šta je dijabetes?"
 archived: false
 ---
 
@@ -20,7 +20,7 @@ title: "Dijabetes tip 1"
 archived: false
 ---
 
-Dijabetes tip 1 je autoimuna bolest u kojoj imunološki sistem napada ćelije pankreasa koje proizvode insulin. Osobe sa tipom 1 dijabetesa moraju svakodnevno primati insulin — injekcijama ili insulinskom pumpom. Dijabetes tip 1 se najčešće javlja u detinjstvu ili mladosti, ali može se pojaviti u bilo kom dobu.
+Dijabetes tip 1 je autoimuna bolest u kojoj imunološki sistem napada ćelije pankreasa koje proizvode insulin. Osobe sa tipom 1 dijabetesa moraju svakodnevno primati insulin, injekcijama ili insulinskom pumpom. Dijabetes tip 1 se najčešće javlja u detinjstvu ili mladosti, ali može se pojaviti u bilo kom dobu.
 
 <!-- more -->
 
@@ -40,7 +40,7 @@ title: "Dijabetes tip 2"
 archived: false
 ---
 
-Dijabetes tip 2 je najčešći oblik dijabetesa — čini oko 90% svih slučajeva. Nastaje kada ćelije postanu rezistentne na insulin ili kada pankreas ne može da proizvede dovoljno insulina. Na razvoj tipa 2 utiču genetika, prekomerna težina, fizička neaktivnost i starosna dob. Leči se promenom načina života, oralnim lekovima i/ili insulinom.
+Dijabetes tip 2 je najčešći oblik dijabetesa, čini oko 90% svih slučajeva. Nastaje kada ćelije postanu rezistentne na insulin ili kada pankreas ne može da proizvede dovoljno insulina. Na razvoj tipa 2 utiču genetika, prekomerna težina, fizička neaktivnost i starosna dob. Leči se promenom načina života, oralnim lekovima i/ili insulinom.
 
 <!-- more -->
 
@@ -80,7 +80,7 @@ title: "Simptomi dijabetesa"
 archived: false
 ---
 
-Česti simptomi dijabetesa uključuju: pojačanu žeđ i učestalo mokrenje, umor i slabost, zamagljen vid, sporo zarastanje rana, trnce ili utrnulost u stopalima i šakama. Dijabetes tip 2 često nema simptoma u ranoj fazi — redovne provere šećera su ključne za rano otkrivanje.
+Česti simptomi dijabetesa uključuju: pojačanu žeđ i učestalo mokrenje, umor i slabost, zamagljen vid, sporo zarastanje rana, trnce ili utrnulost u stopalima i šakama. Dijabetes tip 2 često nema simptoma u ranoj fazi, redovne provere šećera su ključne za rano otkrivanje.
 
 <!-- more -->
 
